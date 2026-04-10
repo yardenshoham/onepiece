@@ -23,7 +23,7 @@ func newRootCmd() *cobra.Command {
 			if debug {
 				level = slog.LevelDebug
 			}
-			logger := slog.New(slog.NewTextHandler(cmd.ErrOrStderr(), &slog.HandlerOptions{
+			logger := slog.New(slog.NewTextHandler(cmd.OutOrStdout(), &slog.HandlerOptions{
 				Level: level,
 			}))
 			cmd.SetContext(context.WithValue(cmd.Context(), loggerKey{}, logger))
