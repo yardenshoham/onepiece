@@ -126,6 +126,14 @@ func TestDashboardPageWithData(t *testing.T) {
 			t.Errorf("expected body to contain %q", want)
 		}
 	}
+
+	if !strings.Contains(body, `<relative-time datetime="2026-04-10T10:30:00Z" format="relative">`) {
+		t.Error("expected dashboard to render relative-time element")
+	}
+
+	if !strings.Contains(body, "https://unpkg.com/@github/relative-time-element@5.0.0/dist/index.js") {
+		t.Error("expected dashboard to include relative-time-element script")
+	}
 }
 
 func TestAboutPage(t *testing.T) {

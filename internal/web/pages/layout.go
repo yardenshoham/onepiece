@@ -16,6 +16,10 @@ func Layout(title, currentPath string, children ...g.Node) g.Node {
 		Head: []g.Node{
 			html.Meta(g.Attr("name", "viewport"), g.Attr("content", "width=device-width, initial-scale=1")),
 			html.Link(g.Attr("rel", "stylesheet"), g.Attr("href", "https://cdn.simplecss.org/simple.min.css")),
+			html.Script(
+				g.Attr("type", "module"),
+				g.Attr("src", "https://unpkg.com/@github/relative-time-element@5.0.0/dist/index.js"),
+			),
 			html.StyleEl(g.Text(`
 				.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1em; }
 				article { margin: 0; }

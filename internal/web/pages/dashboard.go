@@ -68,7 +68,12 @@ func DashboardPage(d *tracker.Dashboard) g.Node {
 		// Last updated
 		html.P(
 			html.Style("color: var(--text-light, #6c757d); font-size: 0.85em; margin-top: 2em;"),
-			g.Textf("Last updated: %s", d.LastUpdated.Format("Jan 2, 2006 3:04 PM UTC")),
+			g.Text("Last updated: "),
+			g.El("relative-time",
+				g.Attr("datetime", d.LastUpdated.Format("2006-01-02T15:04:05Z07:00")),
+				g.Attr("format", "relative"),
+				g.Text(d.LastUpdated.Format("Jan 2, 2006 3:04 PM MST")),
+			),
 		),
 	)
 }
