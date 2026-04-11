@@ -157,3 +157,37 @@ func TestAboutPage(t *testing.T) {
 		t.Error("expected gomponents credit")
 	}
 }
+
+func TestUnknownPathsReturn404(t *testing.T) {
+	t.Parallel()
+
+	s := newTestServer(nil)
+
+	paths := []string{
+		"/.git/config",
+		"/.env",
+		"/.env.production",
+		"/.aws/credentials",
+		"/@fs/etc/passwd",
+		"/@fs/app/.git/config",
+		"/admin",
+		"/swagger-ui.html",
+		"/actuator/env",
+		"/wp-login.php",
+		"/config.json",
+	}
+
+	for _, path := range paths {
+		t.Run(path, func(t *testing.T) {
+			t.Parallel()
+
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			w := httptest.NewRecorder()
+			s.mux.ServeHTTP(w, req)
+
+			if w.Code != http.StatusNotFound {
+				t.Errorf("GET %s: got status %d, want %d", path, w.Code, http.StatusNotFound)
+			}
+		})
+	}
+}

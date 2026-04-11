@@ -31,7 +31,7 @@ func NewServer(logger *slog.Logger, p *poller.Poller) *Server {
 	}
 
 	s.mux.Handle("GET /static/", http.FileServerFS(staticFiles))
-	s.mux.HandleFunc("GET /", s.handleDashboard)
+	s.mux.HandleFunc("GET /{$}", s.handleDashboard)
 	s.mux.HandleFunc("GET /about", s.handleAbout)
 	s.mux.HandleFunc("GET /health", s.handleHealth)
 

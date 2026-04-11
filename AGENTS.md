@@ -2,7 +2,7 @@ When you change Go code, before stopping, test what you changed, run go fmt, go 
 
 When you need context in tests, use t.Context().
 
-When debugging or generating random files or doing whatever temporary stuff, use the debug directory.
+When debugging, generating random files, logs, or doing whatever temporary stuff, use the debug directory.
 
 Do not use dot imports (`. "maragu.dev/gomponents/html"`) — the linter forbids them. Use qualified imports (`"maragu.dev/gomponents/html"` then `html.P(...)`) instead.
 
