@@ -15,6 +15,8 @@ func Layout(title, currentPath string, children ...g.Node) g.Node {
 		Language: "en",
 		Head: []g.Node{
 			html.Meta(g.Attr("name", "viewport"), g.Attr("content", "width=device-width, initial-scale=1")),
+			html.Meta(g.Attr("http-equiv", "refresh"), g.Attr("content", "7200")), // Auto-refresh every 2 hours
+			html.Link(g.Attr("rel", "icon"), g.Attr("type", "image/svg+xml"), g.Attr("href", "/static/favicon.svg")),
 			html.Link(g.Attr("rel", "stylesheet"), g.Attr("href", "https://cdn.simplecss.org/simple.min.css")),
 			html.Script(
 				g.Attr("type", "module"),

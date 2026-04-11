@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -10,6 +11,9 @@ import (
 	"github.com/yardenshoham/onepiece/internal/web/pages"
 	"github.com/yardenshoham/onepiece/pkg/poller"
 )
+
+//go:embed static
+var staticFiles embed.FS
 
 // Server is the HTTP server for the One Piece tracker dashboard.
 type Server struct {
@@ -26,6 +30,7 @@ func NewServer(logger *slog.Logger, p *poller.Poller) *Server {
 		mux:    http.NewServeMux(),
 	}
 
+	s.mux.Handle("GET /static/", http.FileServerFS(staticFiles))
 	s.mux.HandleFunc("GET /", s.handleDashboard)
 	s.mux.HandleFunc("GET /about", s.handleAbout)
 	s.mux.HandleFunc("GET /health", s.handleHealth)
