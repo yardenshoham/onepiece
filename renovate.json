@@ -19,6 +19,17 @@
       ],
       "depNameTemplate": "golangci/golangci-lint",
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Update JavaScript and CSS CDN dependencies in Go templates",
+      "fileMatch": [
+        "\\.go$"
+      ],
+      "matchStrings": [
+        "https://(?:unpkg\\.com|cdn\\.jsdelivr\\.net/npm)/(?<depName>@?[^@\\s\"]+)@(?<currentValue>[\\d.]+)"
+      ],
+      "datasourceTemplate": "npm"
     }
   ],
   "automerge": true
