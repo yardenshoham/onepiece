@@ -165,7 +165,7 @@ func TestComputeStreaks(t *testing.T) {
 	}
 }
 
-func TestComputeStreakZeroIfNoWatchToday(t *testing.T) {
+func TestComputeStreakContinuesIfNoWatchToday(t *testing.T) {
 	t.Parallel()
 	tr := NewTracker(slog.Default())
 
@@ -181,8 +181,8 @@ func TestComputeStreakZeroIfNoWatchToday(t *testing.T) {
 
 	d := tr.Compute(profile, entries, seasons)
 
-	if d.CurrentStreak != 0 {
-		t.Errorf("got CurrentStreak %d, want 0 (nothing watched today)", d.CurrentStreak)
+	if d.CurrentStreak != 2 {
+		t.Errorf("got CurrentStreak %d, want 2 (streak continues even without watching today)", d.CurrentStreak)
 	}
 	if d.LongestStreak != 2 {
 		t.Errorf("got LongestStreak %d, want 2", d.LongestStreak)
@@ -285,6 +285,29 @@ func TestCalculateStreaks(t *testing.T) {
 	}
 	if longest != 3 {
 		t.Errorf("got longest streak %d, want 3", longest)
+	}
+}
+
+func TestCalculateStreaksFiveDaysNoWatchToday(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 4, 10, 0, 0, 0, 0, time.UTC)
+	daily := []DailyCount{
+		{"2026-04-04", 0},
+		{"2026-04-05", 1},
+		{"2026-04-06", 2},
+		{"2026-04-07", 1},
+		{"2026-04-08", 3},
+		{"2026-04-09", 1},
+		{"2026-04-10", 0}, // today — haven't watched yet
+	}
+
+	current, longest := calculateStreaks(daily, now)
+	if current != 5 {
+		t.Errorf("got current streak %d, want 5", current)
+	}
+	if longest != 5 {
+		t.Errorf("got longest streak %d, want 5", longest)
 	}
 }
 

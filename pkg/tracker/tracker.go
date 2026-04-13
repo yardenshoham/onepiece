@@ -172,11 +172,14 @@ func calculateStreaks(daily []DailyCount, now time.Time) (current, longest int) 
 		}
 	}
 
-	// Current streak: count back from today
-	today := now.Format("2006-01-02")
-	if watchDays[today] {
+	// Current streak: count back from today (or yesterday if no watch today)
+	start := now
+	if !watchDays[now.Format("2006-01-02")] {
+		start = now.AddDate(0, 0, -1)
+	}
+	if watchDays[start.Format("2006-01-02")] {
 		current = 1
-		d := now.AddDate(0, 0, -1)
+		d := start.AddDate(0, 0, -1)
 		for watchDays[d.Format("2006-01-02")] {
 			current++
 			d = d.AddDate(0, 0, -1)
