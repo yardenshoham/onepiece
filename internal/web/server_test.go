@@ -16,7 +16,7 @@ func newTestServer(d *tracker.Dashboard) *Server {
 	logger := slog.Default()
 	tr := tracker.NewTracker(logger)
 	_ = tr
-	p := poller.NewPoller(logger, nil, nil, time.Hour)
+	p := poller.NewPoller(logger, nil, nil, time.Hour, "")
 
 	if d != nil {
 		p.SetDashboard(d)

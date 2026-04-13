@@ -41,12 +41,23 @@ docker run -p 8080:8080 \
 
 ## Configuration
 
-| Environment Variable     | Flag              | Default    | Description                  |
-| ------------------------ | ----------------- | ---------- | ---------------------------- |
-| `ONEPIECE_CR_EMAIL`      | `--email`         | (required) | Crunchyroll account email    |
-| `ONEPIECE_CR_PASSWORD`   | `--password`      | (required) | Crunchyroll account password |
-| `ONEPIECE_ADDR`          | `--addr`          | `:8080`    | HTTP listen address          |
-| `ONEPIECE_POLL_INTERVAL` | `--poll-interval` | `1h`       | Data refresh interval        |
+| Environment Variable        | Flag                 | Default    | Description                               |
+| --------------------------- | -------------------- | ---------- | ----------------------------------------- |
+| `ONEPIECE_CR_EMAIL`         | `--email`            | (required) | Crunchyroll account email                 |
+| `ONEPIECE_CR_PASSWORD`      | `--password`         | (required) | Crunchyroll account password              |
+| `ONEPIECE_ADDR`             | `--addr`             | `:8080`    | HTTP listen address                       |
+| `ONEPIECE_POLL_INTERVAL`    | `--poll-interval`    | `1h`       | Data refresh interval                     |
+| `ONEPIECE_HEALTHCHECK_UUID` | `--healthcheck-uuid` |            | Healthchecks.io check UUID for monitoring |
+
+## Monitoring
+
+The dashboard supports optional [healthchecks.io](https://healthchecks.io/) monitoring. When configured, each poll cycle sends:
+
+- A **start** signal before fetching data (enables execution time tracking)
+- A **success** signal with diagnostics (profile name, episodes watched, duration) on completion
+- A **failure** signal with error details if the poll fails
+
+Signals use run IDs to correlate start/completion for accurate duration measurement, and include automatic retries with exponential backoff.
 
 ## Commands
 

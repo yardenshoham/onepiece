@@ -17,10 +17,11 @@ import (
 
 func newWebCmd() *cobra.Command {
 	var (
-		email        string
-		password     string
-		addr         string
-		pollInterval time.Duration
+		email           string
+		password        string
+		addr            string
+		pollInterval    time.Duration
+		healthcheckUUID string
 	)
 
 	cmd := &cobra.Command{
@@ -55,6 +56,10 @@ func newWebCmd() *cobra.Command {
 				}
 			}
 
+			if healthcheckUUID == "" {
+				healthcheckUUID = os.Getenv("ONEPIECE_HEALTHCHECK_UUID")
+			}
+
 			// Setup signal-based context
 			ctx, cancel := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 			defer cancel()
@@ -68,7 +73,7 @@ func newWebCmd() *cobra.Command {
 
 			// Create tracker and poller
 			tr := tracker.NewTracker(logger)
-			p := poller.NewPoller(logger, client, tr, pollInterval)
+			p := poller.NewPoller(logger, client, tr, pollInterval, healthcheckUUID)
 
 			// Start poller in background (blocks on initial fetch)
 			pollErrCh := make(chan error, 1)
@@ -106,6 +111,7 @@ func newWebCmd() *cobra.Command {
 	cmd.Flags().StringVar(&password, "password", "", "Crunchyroll password ($ONEPIECE_CR_PASSWORD)")
 	cmd.Flags().StringVar(&addr, "addr", ":8080", "Listen address ($ONEPIECE_ADDR)")
 	cmd.Flags().DurationVar(&pollInterval, "poll-interval", time.Hour, "Poll interval ($ONEPIECE_POLL_INTERVAL)")
+	cmd.Flags().StringVar(&healthcheckUUID, "healthcheck-uuid", "", "Healthchecks.io check UUID ($ONEPIECE_HEALTHCHECK_UUID)")
 
 	return cmd
 }

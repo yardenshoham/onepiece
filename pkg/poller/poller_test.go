@@ -11,7 +11,7 @@ import (
 func TestPollerDashboardNilBeforeStart(t *testing.T) {
 	t.Parallel()
 
-	p := NewPoller(slog.Default(), nil, nil, time.Hour)
+	p := NewPoller(slog.Default(), nil, nil, time.Hour, "")
 	if d := p.Dashboard(); d != nil {
 		t.Errorf("expected nil dashboard before start, got %+v", d)
 	}
@@ -20,7 +20,7 @@ func TestPollerDashboardNilBeforeStart(t *testing.T) {
 func TestPollerDashboardSetAfterFetch(t *testing.T) {
 	t.Parallel()
 
-	p := NewPoller(slog.Default(), nil, nil, time.Hour)
+	p := NewPoller(slog.Default(), nil, nil, time.Hour, "")
 
 	d := &tracker.Dashboard{
 		ProfileName:     "Test",
@@ -43,7 +43,7 @@ func TestPollerStartCancellation(t *testing.T) {
 
 	// Test that SetDashboard + Dashboard works correctly.
 	// We can't start a real poller without a real Crunchyroll client.
-	p := NewPoller(slog.Default(), nil, tracker.NewTracker(slog.Default()), 100*time.Millisecond)
+	p := NewPoller(slog.Default(), nil, tracker.NewTracker(slog.Default()), 100*time.Millisecond, "")
 
 	d := &tracker.Dashboard{ProfileName: "CancelTest", EpisodesWatched: 5}
 	p.SetDashboard(d)
