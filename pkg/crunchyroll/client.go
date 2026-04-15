@@ -121,18 +121,22 @@ func (c *Client) doAuth(ctx context.Context, data url.Values) error {
 	return nil
 }
 
-func (c *Client) ensureValidToken(ctx context.Context) error {
+func (c *Client) ensureValidToken(ctx context.Context) (string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if time.Now().Before(c.tokenExpiry.Add(-30 * time.Second)) {
-		return nil
+		return c.accessToken, nil
 	}
-	return c.refreshAccessToken(ctx)
+	if err := c.refreshAccessToken(ctx); err != nil {
+		return "", fmt.Errorf("failed to refresh access token: %w", err)
+	}
+	return c.accessToken, nil
 }
 
 func (c *Client) doGet(ctx context.Context, url string) ([]byte, error) {
-	if err := c.ensureValidToken(ctx); err != nil {
+	token, err := c.ensureValidToken(ctx)
+	if err != nil {
 		return nil, fmt.Errorf("ensuring valid token: %w", err)
 	}
 
@@ -140,7 +144,7 @@ func (c *Client) doGet(ctx context.Context, url string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
-	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := c.httpClient.Do(req)
