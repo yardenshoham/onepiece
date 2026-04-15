@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/yardenshoham/onepiece/internal/web"
+	"github.com/yardenshoham/onepiece/internal/web/pages"
 	"github.com/yardenshoham/onepiece/pkg/crunchyroll"
 	"github.com/yardenshoham/onepiece/pkg/poller"
 	"github.com/yardenshoham/onepiece/pkg/tracker"
@@ -100,6 +101,10 @@ func newWebCmd() *cobra.Command {
 				}
 				time.Sleep(50 * time.Millisecond)
 			}
+
+			// Configure optional analytics
+			pages.PostHogAPIKey = os.Getenv("ONEPIECE_POSTHOG_KEY")
+			pages.PostHogHost = os.Getenv("ONEPIECE_POSTHOG_HOST")
 
 			// Create and start web server
 			server := web.NewServer(logger, p)
