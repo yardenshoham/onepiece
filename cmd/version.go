@@ -22,7 +22,7 @@ func newVersionCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			info, ok := debug.ReadBuildInfo()
 			if !ok {
-				panic("failed to read build info")
+				return fmt.Errorf("failed to read build info")
 			}
 			asJSON, err := json.Marshal(
 				versionInfo{
