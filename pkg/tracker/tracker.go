@@ -3,6 +3,7 @@ package tracker
 import (
 	"log/slog"
 	"math"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -128,7 +129,7 @@ func (t *Tracker) Compute(profile crunchyroll.Profile, history []crunchyroll.Wat
 	for k := range dailyMap {
 		dailyKeys = append(dailyKeys, k)
 	}
-	sort.Strings(dailyKeys)
+	slices.Sort(dailyKeys)
 
 	d.DailyEpisodes = make([]DailyCount, 0, len(dailyKeys))
 	for _, k := range dailyKeys {
