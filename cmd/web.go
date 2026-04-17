@@ -76,31 +76,17 @@ func newWebCmd() *cobra.Command {
 			tr := tracker.NewTracker(logger)
 			p := poller.NewPoller(logger, client, tr, pollInterval, healthcheckUUID)
 
-			// Start poller in background (blocks on initial fetch)
-			pollErrCh := make(chan error, 1)
-			go func() {
-				pollErrCh <- p.Start(ctx)
-			}()
-
-			// Wait briefly for initial fetch to complete or fail
-			// The poller's Start blocks on the first fetch, so we need to wait
-			// for either the dashboard to be set or an error
-			for {
-				select {
-				case err := <-pollErrCh:
-					if err != nil {
-						return fmt.Errorf("poller failed: %w", err)
-					}
-					// poller returned nil = context cancelled during initial fetch
-					return nil
-				default:
-				}
-
-				if p.Dashboard() != nil {
-					break
-				}
-				time.Sleep(50 * time.Millisecond)
+			// Perform initial data fetch synchronously
+			if err := p.Fetch(ctx); err != nil {
+				return fmt.Errorf("initial fetch failed: %w", err)
 			}
+
+			// Start background polling loop
+			go func() {
+				if err := p.Start(ctx); err != nil {
+					logger.Error("poller stopped with error", "error", err)
+				}
+			}()
 
 			// Configure optional analytics
 			pages.PostHogAPIKey = os.Getenv("ONEPIECE_POSTHOG_KEY")

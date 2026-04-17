@@ -42,15 +42,9 @@ func NewPoller(logger *slog.Logger, client *crunchyroll.Client, tracker *tracker
 	return p
 }
 
-// Start begins polling. It performs an immediate fetch, then repeats on interval.
-// It blocks until ctx is cancelled. Returns the first fetch error (if any).
+// Start begins the polling loop. It blocks until ctx is cancelled.
 func (p *Poller) Start(ctx context.Context) error {
 	p.logger.Info("polling started", "interval", p.interval)
-
-	// Initial fetch is blocking and fatal on error
-	if err := p.fetch(ctx); err != nil {
-		return fmt.Errorf("initial fetch failed: %w", err)
-	}
 
 	ticker := time.NewTicker(p.interval)
 	defer ticker.Stop()
@@ -61,14 +55,15 @@ func (p *Poller) Start(ctx context.Context) error {
 			p.logger.Info("polling stopped")
 			return nil
 		case <-ticker.C:
-			if err := p.fetch(ctx); err != nil {
+			if err := p.Fetch(ctx); err != nil {
 				p.logger.Error("polling failed", "error", err)
 			}
 		}
 	}
 }
 
-func (p *Poller) fetch(ctx context.Context) error {
+// Fetch performs a single data fetch and updates the dashboard.
+func (p *Poller) Fetch(ctx context.Context) error {
 	start := time.Now()
 
 	// Generate a run ID so healthchecks.io can correlate start/completion signals
