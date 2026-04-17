@@ -75,7 +75,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, _ *http.Request) {
 
 	if d.EpisodesWatched == 0 {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := pages.Layout("One Piece Tracker", "/").Render(w); err != nil {
+		if err := pages.Layout("One Piece Tracker", "/", 7200).Render(w); err != nil {
 			s.logger.Error("rendering empty dashboard", "error", err)
 		}
 		return

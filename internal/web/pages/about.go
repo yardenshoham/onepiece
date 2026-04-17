@@ -7,7 +7,7 @@ import (
 
 // AboutPage renders the about page.
 func AboutPage() g.Node {
-	return Layout("About — One Piece Tracker", "/about",
+	return Layout("About — One Piece Tracker", "/about", 7200,
 		html.H2(g.Text("What is this?")),
 		html.P(g.Text("One Piece Tracker is a web dashboard that connects to the Crunchyroll API, fetches your One Piece watch history, and presents interesting metrics about your viewing journey.")),
 

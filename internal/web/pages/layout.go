@@ -31,13 +31,13 @@ posthog.init(%q,{api_host:%q,person_profiles:'always'})`, PostHogAPIKey, host)),
 }
 
 // Layout wraps page content with the shared HTML layout.
-func Layout(title, currentPath string, children ...g.Node) g.Node {
+func Layout(title, currentPath string, refreshSeconds int, children ...g.Node) g.Node {
 	return c.HTML5(c.HTML5Props{
 		Title:    title,
 		Language: "en",
 		Head: []g.Node{
 			html.Meta(g.Attr("name", "viewport"), g.Attr("content", "width=device-width, initial-scale=1")),
-			html.Meta(g.Attr("http-equiv", "refresh"), g.Attr("content", "7200")), // Auto-refresh every 2 hours
+			html.Meta(g.Attr("http-equiv", "refresh"), g.Attr("content", fmt.Sprintf("%d", refreshSeconds))),
 			html.Link(g.Attr("rel", "icon"), g.Attr("type", "image/svg+xml"), g.Attr("href", "/static/favicon.svg")),
 			html.Link(g.Attr("rel", "stylesheet"), g.Attr("href", "https://cdn.jsdelivr.net/npm/simpledotcss@2.3.7/simple.min.css")),
 			html.Script(g.Attr("src", "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js")),

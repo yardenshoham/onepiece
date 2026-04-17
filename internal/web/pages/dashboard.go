@@ -14,7 +14,7 @@ import (
 func DashboardPage(d *tracker.Dashboard) g.Node {
 	title := fmt.Sprintf("One Piece Tracker — %s's Journey", d.ProfileName)
 
-	return Layout(title, "/",
+	return Layout(title, "/", 7200,
 		// Metric cards grid
 		html.Div(g.Attr("class", "grid"),
 			// Progress card
@@ -104,8 +104,7 @@ func recentTable(episodes []tracker.EpisodeInfo) g.Node {
 
 // LoadingPage renders a page shown when data hasn't been fetched yet.
 func LoadingPage() g.Node {
-	return Layout("One Piece Tracker — Loading...", "/",
-		html.Meta(g.Attr("http-equiv", "refresh"), g.Attr("content", "5")),
+	return Layout("One Piece Tracker — Loading...", "/", 5,
 		html.P(g.Text("Loading data from Crunchyroll... This page will refresh automatically.")),
 	)
 }
