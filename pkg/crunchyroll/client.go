@@ -21,6 +21,11 @@ const (
 	basicAuthToken = "eTJhcnZqYjBoMHJndnRpemxvdnk6SlZMdndkSXBYdnhVLXFJQnZUMU04b1FUcjFxbFFKWDI="
 	userAgent      = "Crunchyroll/ANDROIDTV/3.59.0_22338 (Android 13.0; en-US; TCL-S5400AF Build/TP1A.220624.014)"
 	pageSize       = 100
+
+	// maxResponseSize caps how much data we read from API responses.
+	// Measured largest response (watch-history page) was ~211 KB;
+	// 20× that ≈ 4.2 MB. We use 10 MB as a generous ceiling.
+	maxResponseSize = 10 * 1024 * 1024
 )
 
 // Client is a Crunchyroll API client with automatic token refresh.
@@ -98,9 +103,12 @@ func (c *Client) doAuth(ctx context.Context, data url.Values) error {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize+1))
 	if err != nil {
 		return fmt.Errorf("reading auth response: %w", err)
+	}
+	if len(body) > maxResponseSize {
+		return fmt.Errorf("auth response too large: %d bytes exceeds %d byte limit", len(body), maxResponseSize)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -153,9 +161,12 @@ func (c *Client) doGet(ctx context.Context, url string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize+1))
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
+	}
+	if len(body) > maxResponseSize {
+		return nil, fmt.Errorf("response too large: %d bytes exceeds %d byte limit", len(body), maxResponseSize)
 	}
 
 	if resp.StatusCode != http.StatusOK {
