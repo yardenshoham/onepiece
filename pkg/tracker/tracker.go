@@ -118,8 +118,8 @@ func (t *Tracker) Compute(profile crunchyroll.Profile, history []crunchyroll.Wat
 	}
 
 	lastDate := lastEntry.DatePlayed.UTC().Truncate(24 * time.Hour)
-	for d := firstDate; !d.After(lastDate); d = d.AddDate(0, 0, 1) {
-		key := d.Format("2006-01-02")
+	for day := firstDate; !day.After(lastDate); day = day.AddDate(0, 0, 1) {
+		key := day.Format("2006-01-02")
 		count := dailyMap[key]
 		dailyMap[key] = count // ensure key exists
 	}
