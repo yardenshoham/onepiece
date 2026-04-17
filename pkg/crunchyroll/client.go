@@ -26,6 +26,10 @@ const (
 	// Measured largest response (watch-history page) was ~211 KB;
 	// 20× that ≈ 4.2 MB. We use 10 MB as a generous ceiling.
 	maxResponseSize = 10 * 1024 * 1024
+
+	// maxPages caps pagination to prevent infinite loops if the API
+	// returns inconsistent data. 300 × 100 = 30,000 entries.
+	maxPages = 300
 )
 
 // Client is a Crunchyroll API client with automatic token refresh.
@@ -210,9 +214,8 @@ func (c *Client) GetWatchHistory(ctx context.Context, page, ps int) (*WatchHisto
 // GetAllWatchHistory fetches all pages of watch history.
 func (c *Client) GetAllWatchHistory(ctx context.Context) ([]WatchHistoryEntry, error) {
 	var all []WatchHistoryEntry
-	page := 1
 
-	for {
+	for page := 1; page <= maxPages; page++ {
 		c.logger.Debug("fetching watch history", "page", page)
 		resp, err := c.GetWatchHistory(ctx, page, pageSize)
 		if err != nil {
@@ -222,13 +225,12 @@ func (c *Client) GetAllWatchHistory(ctx context.Context) ([]WatchHistoryEntry, e
 		all = append(all, resp.Data...)
 
 		if len(resp.Data) < pageSize || len(all) >= resp.Total {
-			break
+			c.logger.Info("fetched watch history", "total_entries", len(all))
+			return all, nil
 		}
-		page++
 	}
 
-	c.logger.Info("fetched watch history", "total_entries", len(all))
-	return all, nil
+	return nil, fmt.Errorf("watch history exceeded %d pages, aborting", maxPages)
 }
 
 // GetSeasons returns all seasons for a series.
