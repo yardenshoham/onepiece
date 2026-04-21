@@ -11,7 +11,6 @@ A web dashboard that tracks your One Piece viewing progress on Crunchyroll.
 - Calculates watch rate (episodes/day) and estimates when you'll catch up
 - Tracks viewing streaks (current and longest consecutive days)
 - Auto-refreshes data every hour in the background
-- Server-side rendered HTML with no JavaScript required
 
 ## Quick Start
 
