@@ -100,7 +100,7 @@ func (p *Poller) Fetch(ctx context.Context) error {
 		return err
 	}
 
-	dashboard := p.tracker.Compute(*profile, history, seasons)
+	dashboard := p.tracker.Compute(time.Now().UTC(), *profile, history, seasons)
 
 	p.mu.Lock()
 	p.dashboard = dashboard

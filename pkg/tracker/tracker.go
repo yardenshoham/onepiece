@@ -22,10 +22,11 @@ func NewTracker(logger *slog.Logger) *Tracker {
 }
 
 // Compute takes raw Crunchyroll data and returns a Dashboard snapshot.
-func (t *Tracker) Compute(profile crunchyroll.Profile, history []crunchyroll.WatchHistoryEntry, seasons []crunchyroll.Season) *Dashboard {
+// now is the current time and is used for all time-relative calculations.
+func (t *Tracker) Compute(now time.Time, profile crunchyroll.Profile, history []crunchyroll.WatchHistoryEntry, seasons []crunchyroll.Season) *Dashboard {
 	d := &Dashboard{
 		ProfileName: profile.ProfileName,
-		LastUpdated: time.Now().UTC(),
+		LastUpdated: now,
 	}
 
 	// Calculate total episodes from non-remastered seasons
@@ -93,9 +94,9 @@ func (t *Tracker) Compute(profile crunchyroll.Profile, history []crunchyroll.Wat
 	d.CurrentSeason = lastEntry.Panel.EpisodeMetadata.SeasonTitle
 
 	// Days since first watch
-	now := time.Now().UTC().Truncate(24 * time.Hour)
+	today := now.UTC().Truncate(24 * time.Hour)
 	firstDate := d.FirstWatchDate.Truncate(24 * time.Hour)
-	d.DaysSinceFirst = int(now.Sub(firstDate).Hours() / 24)
+	d.DaysSinceFirst = int(today.Sub(firstDate).Hours() / 24)
 
 	// Average episodes per day
 	if d.DaysSinceFirst == 0 {
@@ -107,7 +108,7 @@ func (t *Tracker) Compute(profile crunchyroll.Profile, history []crunchyroll.Wat
 	// Estimated catch-up date
 	if d.AvgEpisodesPerDay > 0 {
 		daysNeeded := math.Ceil(float64(d.EpisodesRemaining) / d.AvgEpisodesPerDay)
-		d.EstimatedCatchUpDate = now.AddDate(0, 0, int(daysNeeded))
+		d.EstimatedCatchUpDate = today.AddDate(0, 0, int(daysNeeded))
 	}
 
 	// Build daily episode counts
@@ -137,7 +138,7 @@ func (t *Tracker) Compute(profile crunchyroll.Profile, history []crunchyroll.Wat
 	}
 
 	// Calculate streaks
-	d.CurrentStreak, d.LongestStreak = calculateStreaks(d.DailyEpisodes, now)
+	d.CurrentStreak, d.LongestStreak = calculateStreaks(d.DailyEpisodes, today)
 
 	// Recent episodes (last 10, most recent first)
 	d.RecentEpisodes = make([]EpisodeInfo, 0, 10)
