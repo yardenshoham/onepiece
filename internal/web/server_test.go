@@ -13,6 +13,10 @@ import (
 )
 
 func newTestServer(d *tracker.Dashboard) *Server {
+	return newTestServerWithConfig(d, Config{})
+}
+
+func newTestServerWithConfig(d *tracker.Dashboard, config Config) *Server {
 	logger := slog.Default()
 	tr := tracker.NewTracker(logger)
 	_ = tr
@@ -22,7 +26,7 @@ func newTestServer(d *tracker.Dashboard) *Server {
 		p.SetDashboard(d)
 	}
 
-	return NewServer(logger, p)
+	return NewServer(logger, p, config)
 }
 
 func TestHealthEndpointNotReady(t *testing.T) {
@@ -155,6 +159,37 @@ func TestAboutPage(t *testing.T) {
 	}
 	if !strings.Contains(body, "gomponents") {
 		t.Error("expected gomponents credit")
+	}
+}
+
+func TestAboutPageAnalyticsConfigIsPerServer(t *testing.T) {
+	t.Parallel()
+
+	serverA := newTestServerWithConfig(nil, Config{PostHogAPIKey: "alpha"})
+	serverB := newTestServerWithConfig(nil, Config{PostHogAPIKey: "beta", PostHogHost: "https://us.i.posthog.com"})
+
+	requestA := httptest.NewRequest(http.MethodGet, "/about", nil)
+	responseA := httptest.NewRecorder()
+	serverA.mux.ServeHTTP(responseA, requestA)
+
+	requestB := httptest.NewRequest(http.MethodGet, "/about", nil)
+	responseB := httptest.NewRecorder()
+	serverB.mux.ServeHTTP(responseB, requestB)
+
+	bodyA := responseA.Body.String()
+	bodyB := responseB.Body.String()
+
+	if !strings.Contains(bodyA, `posthog.init("alpha",{api_host:"https://eu.i.posthog.com",person_profiles:'always'})`) {
+		t.Error("expected first server to render its own analytics config")
+	}
+	if strings.Contains(bodyA, `posthog.init("beta",{api_host:"https://us.i.posthog.com",person_profiles:'always'})`) {
+		t.Error("expected first server response to exclude second server analytics config")
+	}
+	if !strings.Contains(bodyB, `posthog.init("beta",{api_host:"https://us.i.posthog.com",person_profiles:'always'})`) {
+		t.Error("expected second server to render its own analytics config")
+	}
+	if strings.Contains(bodyB, `posthog.init("alpha",{api_host:"https://eu.i.posthog.com",person_profiles:'always'})`) {
+		t.Error("expected second server response to exclude first server analytics config")
 	}
 }
 

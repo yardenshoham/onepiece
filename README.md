@@ -47,15 +47,15 @@ docker run -p 8080:8080 \
 | `ONEPIECE_ADDR`             | `--addr`             | `:8080`    | HTTP listen address                       |
 | `ONEPIECE_POLL_INTERVAL`    | `--poll-interval`    | `1h`       | Data refresh interval                     |
 | `ONEPIECE_HEALTHCHECK_UUID` | `--healthcheck-uuid` |            | Healthchecks.io check UUID for monitoring |
-| `ONEPIECE_POSTHOG_KEY`      |                      |            | PostHog project API key for analytics     |
-| `ONEPIECE_POSTHOG_HOST`     |                      |            | PostHog API host                          |
+| `ONEPIECE_POSTHOG_KEY`      | `--posthog-key`      |            | PostHog project API key for analytics     |
+| `ONEPIECE_POSTHOG_HOST`     | `--posthog-host`     |            | PostHog API host                          |
 
 ## Analytics
 
-Optional PostHog analytics can be enabled by setting `ONEPIECE_POSTHOG_KEY`.
+Optional PostHog analytics can be enabled by setting `ONEPIECE_POSTHOG_KEY` or passing `--posthog-key`.
 
-- `ONEPIECE_POSTHOG_KEY` enables the PostHog client when set
-- `ONEPIECE_POSTHOG_HOST` overrides the PostHog API host
+- `ONEPIECE_POSTHOG_KEY` or `--posthog-key` enables the PostHog client when set
+- `ONEPIECE_POSTHOG_HOST` or `--posthog-host` overrides the PostHog API host
 - If `ONEPIECE_POSTHOG_HOST` is unset, the app defaults to `https://eu.i.posthog.com`
 
 ## Monitoring

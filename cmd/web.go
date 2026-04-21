@@ -10,7 +10,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/yardenshoham/onepiece/internal/web"
-	"github.com/yardenshoham/onepiece/internal/web/pages"
 	"github.com/yardenshoham/onepiece/pkg/crunchyroll"
 	"github.com/yardenshoham/onepiece/pkg/poller"
 	"github.com/yardenshoham/onepiece/pkg/tracker"
@@ -23,6 +22,8 @@ func newWebCmd() *cobra.Command {
 		addr            string
 		pollInterval    time.Duration
 		healthcheckUUID string
+		posthogKey      string
+		posthogHost     string
 	)
 
 	cmd := &cobra.Command{
@@ -60,6 +61,16 @@ func newWebCmd() *cobra.Command {
 			if healthcheckUUID == "" {
 				healthcheckUUID = os.Getenv("ONEPIECE_HEALTHCHECK_UUID")
 			}
+			if !cmd.Flags().Changed("posthog-key") {
+				if envKey := os.Getenv("ONEPIECE_POSTHOG_KEY"); envKey != "" {
+					posthogKey = envKey
+				}
+			}
+			if !cmd.Flags().Changed("posthog-host") {
+				if envHost := os.Getenv("ONEPIECE_POSTHOG_HOST"); envHost != "" {
+					posthogHost = envHost
+				}
+			}
 
 			// Setup signal-based context
 			ctx, cancel := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
@@ -88,12 +99,11 @@ func newWebCmd() *cobra.Command {
 				}
 			}()
 
-			// Configure optional analytics
-			pages.PostHogAPIKey = os.Getenv("ONEPIECE_POSTHOG_KEY")
-			pages.PostHogHost = os.Getenv("ONEPIECE_POSTHOG_HOST")
-
 			// Create and start web server
-			server := web.NewServer(logger, p)
+			server := web.NewServer(logger, p, web.Config{
+				PostHogAPIKey: posthogKey,
+				PostHogHost:   posthogHost,
+			})
 			return server.ListenAndServe(ctx, addr)
 		},
 	}
@@ -103,6 +113,8 @@ func newWebCmd() *cobra.Command {
 	cmd.Flags().StringVar(&addr, "addr", ":8080", "Listen address ($ONEPIECE_ADDR)")
 	cmd.Flags().DurationVar(&pollInterval, "poll-interval", time.Hour, "Poll interval ($ONEPIECE_POLL_INTERVAL)")
 	cmd.Flags().StringVar(&healthcheckUUID, "healthcheck-uuid", "", "Healthchecks.io check UUID ($ONEPIECE_HEALTHCHECK_UUID)")
+	cmd.Flags().StringVar(&posthogKey, "posthog-key", "", "PostHog project API key ($ONEPIECE_POSTHOG_KEY)")
+	cmd.Flags().StringVar(&posthogHost, "posthog-host", "", "PostHog API host ($ONEPIECE_POSTHOG_HOST)")
 
 	return cmd
 }

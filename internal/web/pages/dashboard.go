@@ -11,10 +11,10 @@ import (
 )
 
 // DashboardPage renders the main dashboard.
-func DashboardPage(d *tracker.Dashboard) g.Node {
+func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node {
 	title := fmt.Sprintf("One Piece Tracker — %s's Journey", d.ProfileName)
 
-	return Layout(title, "/", 7200,
+	return Layout(title, "/", 7200, analyticsConfig,
 		// Metric cards grid
 		html.Div(g.Attr("class", "grid"),
 			// Progress card
@@ -103,8 +103,8 @@ func recentTable(episodes []tracker.EpisodeInfo) g.Node {
 }
 
 // LoadingPage renders a page shown when data hasn't been fetched yet.
-func LoadingPage() g.Node {
-	return Layout("One Piece Tracker — Loading...", "/", 5,
+func LoadingPage(analyticsConfig AnalyticsConfig) g.Node {
+	return Layout("One Piece Tracker — Loading...", "/", 5, analyticsConfig,
 		html.P(g.Text("Loading data from Crunchyroll... This page will refresh automatically.")),
 	)
 }

@@ -15,19 +15,30 @@ import (
 //go:embed static
 var staticFiles embed.FS
 
+// Config controls optional server features.
+type Config struct {
+	PostHogAPIKey string
+	PostHogHost   string
+}
+
 // Server is the HTTP server for the One Piece tracker dashboard.
 type Server struct {
-	logger *slog.Logger
-	poller *poller.Poller
-	mux    *http.ServeMux
+	logger    *slog.Logger
+	poller    *poller.Poller
+	mux       *http.ServeMux
+	analytics pages.AnalyticsConfig
 }
 
 // NewServer creates an HTTP server with all routes registered.
-func NewServer(logger *slog.Logger, p *poller.Poller) *Server {
+func NewServer(logger *slog.Logger, p *poller.Poller, config Config) *Server {
 	s := &Server{
 		logger: logger,
 		poller: p,
 		mux:    http.NewServeMux(),
+		analytics: pages.AnalyticsConfig{
+			PostHogAPIKey: config.PostHogAPIKey,
+			PostHogHost:   config.PostHogHost,
+		},
 	}
 
 	s.mux.Handle("GET /static/", http.FileServerFS(staticFiles))
@@ -67,7 +78,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, _ *http.Request) {
 	d := s.poller.Dashboard()
 	if d == nil {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := pages.LoadingPage().Render(w); err != nil {
+		if err := pages.LoadingPage(s.analytics).Render(w); err != nil {
 			s.logger.Error("rendering loading page", "error", err)
 		}
 		return
@@ -75,21 +86,21 @@ func (s *Server) handleDashboard(w http.ResponseWriter, _ *http.Request) {
 
 	if d.EpisodesWatched == 0 {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := pages.Layout("One Piece Tracker", "/", 7200).Render(w); err != nil {
+		if err := pages.Layout("One Piece Tracker", "/", 7200, s.analytics).Render(w); err != nil {
 			s.logger.Error("rendering empty dashboard", "error", err)
 		}
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.DashboardPage(d).Render(w); err != nil {
+	if err := pages.DashboardPage(d, s.analytics).Render(w); err != nil {
 		s.logger.Error("rendering dashboard", "error", err)
 	}
 }
 
 func (s *Server) handleAbout(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.AboutPage().Render(w); err != nil {
+	if err := pages.AboutPage(s.analytics).Render(w); err != nil {
 		s.logger.Error("rendering about page", "error", err)
 	}
 }
