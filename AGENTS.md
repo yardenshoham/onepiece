@@ -1,4 +1,4 @@
-When you change Go code, before stopping, test what you changed, run go fmt, go fix, and golangci-lint.
+When you change Go code, before stopping, run go fmt, go fix, and golangci-lint, and test what you changed.
 
 When you need context in tests, use t.Context().
 

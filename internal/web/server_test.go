@@ -131,6 +131,10 @@ func TestDashboardPageWithData(t *testing.T) {
 		}
 	}
 
+	if !strings.Contains(body, `/static/app.css`) {
+		t.Error("expected dashboard to include app stylesheet")
+	}
+
 	if !strings.Contains(body, `<relative-time datetime="2026-04-10T10:30:00Z" format="relative">`) {
 		t.Error("expected dashboard to render relative-time element")
 	}
@@ -159,6 +163,26 @@ func TestAboutPage(t *testing.T) {
 	}
 	if !strings.Contains(body, "gomponents") {
 		t.Error("expected gomponents credit")
+	}
+	if !strings.Contains(body, `/static/app.css`) {
+		t.Error("expected about page to include app stylesheet")
+	}
+}
+
+func TestStaticCSSIsServed(t *testing.T) {
+	t.Parallel()
+
+	s := newTestServer(nil)
+	req := httptest.NewRequest(http.MethodGet, "/static/app.css", nil)
+	w := httptest.NewRecorder()
+
+	s.mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("got status %d, want %d", w.Code, http.StatusOK)
+	}
+	if !strings.Contains(w.Body.String(), "--dashboard-shell-width") {
+		t.Error("expected stylesheet content")
 	}
 }
 

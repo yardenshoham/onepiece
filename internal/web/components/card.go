@@ -10,6 +10,7 @@ import (
 // Card renders a metric card with a title and content.
 func Card(title string, children ...g.Node) g.Node {
 	return html.Article(
+		g.Attr("class", "metric-card"),
 		html.H3(g.Text(title)),
 		g.Group(children),
 	)

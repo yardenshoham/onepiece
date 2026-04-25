@@ -32,10 +32,10 @@ func DailyChart(data []tracker.DailyCount) g.Node {
 		return html.P(g.Textf("Error rendering chart: %v", err))
 	}
 
-	script := fmt.Sprintf(`new Chart(document.getElementById('dailyChart'),{type:'bar',data:{labels:%s,datasets:[{label:'Episodes',data:%s,backgroundColor:'rgba(13,110,253,0.7)',borderColor:'rgba(13,110,253,1)',borderWidth:1}]},options:{responsive:true,scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}}});`, labelsJSON, countsJSON)
+	script := fmt.Sprintf(`new Chart(document.getElementById('dailyChart'),{type:'bar',data:{labels:%s,datasets:[{label:'Episodes',data:%s,backgroundColor:'rgba(13,110,253,0.7)',borderColor:'rgba(13,110,253,1)',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}}});`, labelsJSON, countsJSON)
 
 	return html.Div(
-		html.Style("width: 100%; max-width: 800px;"),
+		g.Attr("class", "chart-shell"),
 		g.El("canvas", g.Attr("id", "dailyChart")),
 		html.Script(g.Raw(script)),
 	)
