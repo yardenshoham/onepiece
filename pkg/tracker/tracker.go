@@ -85,12 +85,7 @@ func (t *Tracker) Compute(now time.Time, profile crunchyroll.Profile, history []
 	d.FirstWatchDate = deduped[0].DatePlayed.UTC()
 	lastEntry := deduped[len(deduped)-1]
 
-	d.LastEpisode = EpisodeInfo{
-		Number:      lastEntry.Panel.EpisodeMetadata.EpisodeNumber,
-		Title:       lastEntry.Panel.Title,
-		SeasonTitle: lastEntry.Panel.EpisodeMetadata.SeasonTitle,
-		WatchedAt:   lastEntry.DatePlayed.UTC(),
-	}
+	d.LastEpisode = episodeInfoFrom(lastEntry)
 	d.CurrentSeason = lastEntry.Panel.EpisodeMetadata.SeasonTitle
 
 	// Days since first watch
@@ -140,16 +135,10 @@ func (t *Tracker) Compute(now time.Time, profile crunchyroll.Profile, history []
 	// Calculate streaks
 	d.CurrentStreak, d.LongestStreak = calculateStreaks(d.DailyEpisodes, today)
 
-	// Recent episodes (last 10, most recent first)
-	d.RecentEpisodes = make([]EpisodeInfo, 0, 10)
-	for i := len(deduped) - 1; i >= 0 && len(d.RecentEpisodes) < 10; i-- {
-		e := deduped[i]
-		d.RecentEpisodes = append(d.RecentEpisodes, EpisodeInfo{
-			Number:      e.Panel.EpisodeMetadata.EpisodeNumber,
-			Title:       e.Panel.Title,
-			SeasonTitle: e.Panel.EpisodeMetadata.SeasonTitle,
-			WatchedAt:   e.DatePlayed.UTC(),
-		})
+	// Recent episodes (last 12, most recent first)
+	d.RecentEpisodes = make([]EpisodeInfo, 0, 12)
+	for i := len(deduped) - 1; i >= 0 && len(d.RecentEpisodes) < 12; i-- {
+		d.RecentEpisodes = append(d.RecentEpisodes, episodeInfoFrom(deduped[i]))
 	}
 
 	t.logger.Info("computed dashboard",
@@ -202,4 +191,19 @@ func calculateStreaks(daily []DailyCount, now time.Time) (current, longest int) 
 	}
 
 	return current, longest
+}
+
+// episodeInfoFrom converts a WatchHistoryEntry to an EpisodeInfo, capturing
+// all the rich metadata the panel already provides.
+func episodeInfoFrom(e crunchyroll.WatchHistoryEntry) EpisodeInfo {
+	return EpisodeInfo{
+		Number:       e.Panel.EpisodeMetadata.EpisodeNumber,
+		Title:        e.Panel.Title,
+		Description:  e.Panel.Description,
+		SeasonTitle:  e.Panel.EpisodeMetadata.SeasonTitle,
+		ThumbnailURL: e.Panel.Images.ThumbnailAt(640),
+		SlugTitle:    e.Panel.SlugTitle,
+		DurationMS:   e.Panel.EpisodeMetadata.DurationMS,
+		WatchedAt:    e.DatePlayed.UTC(),
+	}
 }
