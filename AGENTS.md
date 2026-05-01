@@ -11,3 +11,7 @@ The gomponents `html` package exports a `Nav` function, so avoid naming your own
 `html.StyleAttr` is deprecated. Use `html.Style` instead.
 
 Constructor functions that perform I/O (e.g. network calls, auth) should accept a `context.Context` parameter. In cobra commands, use `cmd.Context()` as the parent context rather than `context.Background()`.
+
+To run the app: go run . web --addr ":25255"
+
+Use the browser to navigate to http://localhost:25255/ to see the app in action if needed.
