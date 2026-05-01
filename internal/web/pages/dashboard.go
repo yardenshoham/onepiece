@@ -74,8 +74,18 @@ func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node
 func recentTable(episodes []tracker.EpisodeInfo) g.Node {
 	var rows []g.Node
 	for _, ep := range episodes {
+		wikiURL := fmt.Sprintf("https://onepiece.fandom.com/wiki/Episode_%d", ep.Number)
 		rows = append(rows, html.Tr(
-			html.Td(g.Textf("#%d", ep.Number)),
+			g.Attr("class", "clickable-row"),
+			html.Td(
+				html.A(
+					g.Attr("href", wikiURL),
+					g.Attr("target", "_blank"),
+					g.Attr("rel", "noopener noreferrer"),
+					g.Attr("class", "row-link"),
+					g.Textf("#%d", ep.Number),
+				),
+			),
 			html.Td(g.Text(ep.Title)),
 			html.Td(g.Text(ep.SeasonTitle)),
 			html.Td(g.Text(ep.WatchedAt.Format("Jan 2, 2006"))),
