@@ -53,7 +53,7 @@ func NewClient(ctx context.Context, logger *slog.Logger, email, password string)
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 		email:      email,
 		password:   password,
-		deviceID:   deriveDeviceID(email),
+		deviceID:   DeriveDeviceID(email),
 	}
 
 	if err := c.authenticate(ctx); err != nil {
@@ -268,9 +268,9 @@ func (c *Client) GetSeries(ctx context.Context, seriesID string) (*Series, error
 	return &resp.Data[0], nil
 }
 
-// deriveDeviceID returns a deterministic UUID-v4-shaped device ID derived from
+// DeriveDeviceID returns a deterministic UUID-v4-shaped device ID derived from
 // the user's email so the same device ID is reused across restarts.
-func deriveDeviceID(email string) string {
+func DeriveDeviceID(email string) string {
 	h := sha256.Sum256([]byte(email))
 	// Set version 4 and variant 2 bits on the hash bytes.
 	h[6] = (h[6] & 0x0f) | 0x40

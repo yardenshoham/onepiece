@@ -53,7 +53,7 @@ func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node
 			html.Article(g.Attr("class", "dashboard-panel"),
 				html.H2(g.Text("📜 Recent Episodes")),
 				g.If(len(d.RecentEpisodes) > 0,
-					html.Div(g.Attr("class", "table-scroll"), recentTable(d.RecentEpisodes)),
+					recentEpisodeCards(d.RecentEpisodes),
 				),
 				g.If(len(d.RecentEpisodes) == 0, html.P(g.Text("No episodes watched yet."))),
 			),
@@ -71,38 +71,58 @@ func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node
 	)
 }
 
-func recentTable(episodes []tracker.EpisodeInfo) g.Node {
-	var rows []g.Node
+func recentEpisodeCards(episodes []tracker.EpisodeInfo) g.Node {
+	var cards []g.Node
 	for _, ep := range episodes {
 		wikiURL := fmt.Sprintf("https://onepiece.fandom.com/wiki/Episode_%d", ep.Number)
-		rows = append(rows, html.Tr(
-			g.Attr("class", "clickable-row"),
-			html.Td(
-				html.A(
-					g.Attr("href", wikiURL),
-					g.Attr("target", "_blank"),
-					g.Attr("rel", "noopener noreferrer"),
-					g.Attr("class", "row-link"),
-					g.Textf("#%d", ep.Number),
+		duration := fmt.Sprintf("%d min", ep.DurationMS/1000/60)
+
+		var thumb g.Node
+		if ep.ThumbnailURL != "" {
+			thumb = html.Img(
+				g.Attr("src", ep.ThumbnailURL),
+				g.Attr("alt", ep.Title),
+				g.Attr("loading", "lazy"),
+				g.Attr("class", "ep-card__thumb"),
+			)
+		}
+
+		var desc g.Node
+		if ep.Description != "" {
+			desc = html.P(g.Attr("class", "ep-card__desc"), g.Text(ep.Description))
+		}
+
+		cards = append(cards, html.Article(
+			g.Attr("class", "ep-card"),
+			html.A(
+				g.Attr("href", wikiURL),
+				g.Attr("target", "_blank"),
+				g.Attr("rel", "noopener noreferrer"),
+				g.Attr("class", "ep-card__link"),
+				thumb,
+			),
+			html.Div(g.Attr("class", "ep-card__body"),
+				html.Div(g.Attr("class", "ep-card__meta"),
+					html.Span(g.Attr("class", "ep-card__num"), g.Textf("#%d", ep.Number)),
+					html.Span(g.Attr("class", "ep-card__season"), g.Text(ep.SeasonTitle)),
+				),
+				html.H3(
+					html.A(
+						g.Attr("href", wikiURL),
+						g.Attr("target", "_blank"),
+						g.Attr("rel", "noopener noreferrer"),
+						g.Text(ep.Title),
+					),
+				),
+				desc,
+				html.Div(g.Attr("class", "ep-card__footer"),
+					html.Span(g.Text(ep.WatchedAt.Format("Jan 2, 2006"))),
+					html.Span(g.Text(duration)),
 				),
 			),
-			html.Td(g.Text(ep.Title)),
-			html.Td(g.Text(ep.SeasonTitle)),
-			html.Td(g.Text(ep.WatchedAt.Format("Jan 2, 2006"))),
 		))
 	}
-
-	return html.Table(
-		html.THead(
-			html.Tr(
-				html.Th(g.Text("#")),
-				html.Th(g.Text("Title")),
-				html.Th(g.Text("Season")),
-				html.Th(g.Text("Watched")),
-			),
-		),
-		html.TBody(g.Group(rows)),
-	)
+	return html.Div(g.Attr("class", "ep-grid"), g.Group(cards))
 }
 
 // LoadingPage renders a page shown when data hasn't been fetched yet.

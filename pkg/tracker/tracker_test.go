@@ -240,15 +240,15 @@ func TestComputeRecentEpisodes(t *testing.T) {
 
 	d := tr.Compute(now, profile, entries, seasons)
 
-	if len(d.RecentEpisodes) != 10 {
-		t.Fatalf("got %d recent episodes, want 10", len(d.RecentEpisodes))
+	if len(d.RecentEpisodes) != 12 {
+		t.Fatalf("got %d recent episodes, want 12", len(d.RecentEpisodes))
 	}
 	// Most recent first
 	if d.RecentEpisodes[0].Number != 15 {
 		t.Errorf("got first recent episode number %d, want 15", d.RecentEpisodes[0].Number)
 	}
-	if d.RecentEpisodes[9].Number != 6 {
-		t.Errorf("got last recent episode number %d, want 6", d.RecentEpisodes[9].Number)
+	if d.RecentEpisodes[11].Number != 4 {
+		t.Errorf("got last recent episode number %d, want 4", d.RecentEpisodes[11].Number)
 	}
 }
 

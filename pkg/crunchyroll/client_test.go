@@ -300,7 +300,7 @@ func TestClientDoGetErrorStatus(t *testing.T) {
 func TestDeriveDeviceID(t *testing.T) {
 	t.Parallel()
 
-	id := deriveDeviceID("user@example.com")
+	id := DeriveDeviceID("user@example.com")
 
 	// Should be in hyphenated UUID format.
 	if len(id) != 36 {
@@ -308,12 +308,12 @@ func TestDeriveDeviceID(t *testing.T) {
 	}
 
 	// Same email must produce the same device ID.
-	if id2 := deriveDeviceID("user@example.com"); id != id2 {
+	if id2 := DeriveDeviceID("user@example.com"); id != id2 {
 		t.Errorf("same email produced different IDs: %q vs %q", id, id2)
 	}
 
 	// Different emails must produce different device IDs.
-	if id3 := deriveDeviceID("other@example.com"); id == id3 {
+	if id3 := DeriveDeviceID("other@example.com"); id == id3 {
 		t.Error("different emails should produce different device IDs")
 	}
 }

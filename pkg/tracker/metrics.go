@@ -40,10 +40,14 @@ type Dashboard struct {
 
 // EpisodeInfo holds information about a single watched episode.
 type EpisodeInfo struct {
-	Number      int
-	Title       string
-	SeasonTitle string
-	WatchedAt   time.Time
+	Number       int
+	Title        string
+	Description  string
+	SeasonTitle  string
+	ThumbnailURL string
+	SlugTitle    string
+	DurationMS   int
+	WatchedAt    time.Time
 }
 
 // DailyCount holds the episode count for a single calendar day.
