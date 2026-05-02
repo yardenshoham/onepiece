@@ -180,7 +180,7 @@ func (s *Server) handleQuizQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.QuizQuestionsFragment(questions, s.quizState.AllAnswered()).Render(w); err != nil {
+	if err := pages.QuizQuestionsFragment(questions).Render(w); err != nil {
 		s.logger.Error("rendering quiz questions fragment", "error", err)
 	}
 }

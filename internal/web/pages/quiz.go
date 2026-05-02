@@ -42,10 +42,13 @@ func QuizPage(analyticsConfig AnalyticsConfig, profileName string) g.Node {
 }
 
 // QuizQuestionsFragment renders the quiz questions as an HTML fragment
-// (returned by POST /quiz/questions). allAnswered indicates whether every
-// question in the batch has been answered, which reveals the "Load 3 more" button.
+// (returned by POST /quiz/questions).
 // Already-answered questions are skipped so a page refresh only shows what remains.
-func QuizQuestionsFragment(questions []quiz.Question, allAnswered bool) g.Node {
+// If there are no unanswered questions (full-page navigation back to an
+// already-completed batch), an auto-trigger div is returned so the next batch
+// loads immediately. Otherwise a hidden #quiz-load-more placeholder is included
+// as the OOB swap target for QuizAnswerFragment.
+func QuizQuestionsFragment(questions []quiz.Question) g.Node {
 	var cards []g.Node
 	for _, q := range questions {
 		if !q.Answered {
@@ -53,9 +56,14 @@ func QuizQuestionsFragment(questions []quiz.Question, allAnswered bool) g.Node {
 		}
 	}
 
-	loadMore := loadMoreDiv(allAnswered)
+	if len(cards) == 0 {
+		// All questions already answered — auto-trigger the next batch.
+		return autoLoadDiv()
+	}
 
-	return g.Group(append(cards, loadMore))
+	// Placeholder — replaced via OOB when all questions are answered.
+	placeholder := html.Div(g.Attr("id", "quiz-load-more"))
+	return g.Group(append(cards, placeholder))
 }
 
 // QuizAnswerFragment renders a single answered question card.
@@ -146,22 +154,8 @@ func answerButton(questionID, option string) g.Node {
 	)
 }
 
-// loadMoreDiv renders the "Load 3 more" container. Hidden until all questions
-// are answered.
-func loadMoreDiv(show bool) g.Node {
-	style := "display:none"
-	if show {
-		style = ""
-	}
-	return html.Div(
-		g.Attr("id", "quiz-load-more"),
-		html.Style(style),
-		loadMoreContents(),
-	)
-}
-
-// oobLoadMoreDiv renders the "Load 3 more" div with hx-swap-oob so htmx
-// replaces the existing hidden one with a visible copy.
+// oobLoadMoreDiv OOB-replaces the hidden #quiz-load-more placeholder with the
+// visible "Load 3 more" button.
 func oobLoadMoreDiv() g.Node {
 	return html.Div(
 		g.Attr("id", "quiz-load-more"),
@@ -170,7 +164,7 @@ func oobLoadMoreDiv() g.Node {
 	)
 }
 
-// loadMoreContents is the shared inner content of loadMoreDiv and oobLoadMoreDiv.
+// loadMoreContents is the inner content of the "Load 3 more" button area.
 func loadMoreContents() g.Node {
 	return g.Group([]g.Node{
 		html.Button(
@@ -189,6 +183,21 @@ func loadMoreContents() g.Node {
 			g.Attr("aria-label", "Loading…"),
 		),
 	})
+}
+
+// autoLoadDiv renders a div that immediately fires POST /quiz/questions (refresh)
+// via hx-trigger="load", placed directly inside #quiz-shell. Mirrors the initial
+// page-load trigger in QuizPage and is destroyed when the swap response replaces
+// #quiz-shell's innerHTML, preventing a re-fire.
+func autoLoadDiv() g.Node {
+	return html.Div(
+		hx.Post("/quiz/questions"),
+		hx.Trigger("load"),
+		hx.Target("#quiz-shell"),
+		hx.Swap("innerHTML"),
+		hx.Vals(`{"refresh":"1"}`),
+		html.P(g.Text("Generating questions…")),
+	)
 }
 
 // buildOptions returns all answer options in a randomised order.
