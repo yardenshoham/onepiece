@@ -183,6 +183,8 @@ func episodeSources(episodes []tracker.EpisodeInfo) []EpisodeSource {
 // newID generates a random hex ID.
 func newID() string {
 	var b [8]byte
-	_, _ = rand.Read(b[:])
+	if _, err := rand.Read(b[:]); err != nil {
+		panic(fmt.Sprintf("quiz: failed to generate random ID: %v", err))
+	}
 	return fmt.Sprintf("%x", b)
 }
