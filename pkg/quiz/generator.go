@@ -38,6 +38,7 @@ type rawResponse struct {
 // Generator creates quiz questions via OpenRouter.
 type Generator struct {
 	client *openrouter.OpenRouter
+	model  string
 }
 
 // NewGenerator returns a Generator that authenticates with the given API key.
@@ -46,6 +47,7 @@ func NewGenerator(apiKey string) *Generator {
 		client: openrouter.New(
 			openrouter.WithSecurity(apiKey),
 		),
+		model: model,
 	}
 }
 
@@ -60,7 +62,7 @@ func (g *Generator) GenerateQuestions(ctx context.Context, episodes []EpisodeSou
 	maxT := int64(maxTokens)
 
 	req := components.ChatRequest{
-		Model: new(model),
+		Model: new(g.model),
 		Messages: []components.ChatMessages{
 			components.CreateChatMessagesSystem(components.ChatSystemMessage{
 				Role:    components.ChatSystemMessageRoleSystem,
