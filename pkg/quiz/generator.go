@@ -51,9 +51,12 @@ func NewGenerator(apiKey string) *Generator {
 	}
 }
 
+const maxAttempts = 3
+
 // GenerateQuestions calls the LLM and returns exactly 3 validated questions.
 // usedQuestions contains the text of previously answered questions to avoid
-// repeating them.
+// repeating them. It retries up to maxAttempts times when the LLM returns
+// invalid output.
 func (g *Generator) GenerateQuestions(ctx context.Context, episodes []EpisodeSource, usedQuestions []string) ([]RawQuestion, error) {
 	prompt := buildPrompt(episodes, usedQuestions)
 
@@ -90,6 +93,18 @@ func (g *Generator) GenerateQuestions(ctx context.Context, episodes []EpisodeSou
 		}),
 	}
 
+	var lastErr error
+	for range maxAttempts {
+		questions, err := g.sendRequest(ctx, req)
+		if err == nil {
+			return questions, nil
+		}
+		lastErr = err
+	}
+	return nil, lastErr
+}
+
+func (g *Generator) sendRequest(ctx context.Context, req components.ChatRequest) ([]RawQuestion, error) {
 	resp, err := g.client.Chat.Send(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("OpenRouter request: %w", err)
