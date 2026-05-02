@@ -40,14 +40,15 @@ type Dashboard struct {
 
 // EpisodeInfo holds information about a single watched episode.
 type EpisodeInfo struct {
-	Number       int
-	Title        string
-	Description  string
-	SeasonTitle  string
-	ThumbnailURL string
-	SlugTitle    string
-	DurationMS   int
-	WatchedAt    time.Time
+	Number          int
+	Title           string
+	Description     string
+	LongDescription string // enriched summary from the One Piece Wiki (populated by poller when quiz is enabled)
+	SeasonTitle     string
+	ThumbnailURL    string
+	SlugTitle       string
+	DurationMS      int
+	WatchedAt       time.Time
 }
 
 // DailyCount holds the episode count for a single calendar day.

@@ -14,6 +14,7 @@ import (
 type AnalyticsConfig struct {
 	PostHogAPIKey string
 	PostHogHost   string
+	ShowQuiz      bool
 }
 
 func posthogScript(config AnalyticsConfig) g.Node {
@@ -42,7 +43,7 @@ func Layout(title, currentPath string, refreshSeconds int, analyticsConfig Analy
 		Language: "en",
 		Head: []g.Node{
 			html.Meta(g.Attr("name", "viewport"), g.Attr("content", "width=device-width, initial-scale=1")),
-			html.Meta(g.Attr("http-equiv", "refresh"), g.Attr("content", fmt.Sprintf("%d", refreshSeconds))),
+			g.If(refreshSeconds > 0, html.Meta(g.Attr("http-equiv", "refresh"), g.Attr("content", fmt.Sprintf("%d", refreshSeconds)))),
 			html.Link(g.Attr("rel", "icon"), g.Attr("type", "image/svg+xml"), g.Attr("href", "/static/favicon.svg")),
 			html.Link(g.Attr("rel", "stylesheet"), g.Attr("href", "https://cdn.jsdelivr.net/npm/simpledotcss@2.3.7/simple.min.css")),
 			html.Link(g.Attr("rel", "stylesheet"), g.Attr("href", "/static/app.css")),
@@ -51,12 +52,13 @@ func Layout(title, currentPath string, refreshSeconds int, analyticsConfig Analy
 				g.Attr("type", "module"),
 				g.Attr("src", "https://unpkg.com/@github/relative-time-element@5.0.0/dist/index.js"),
 			),
+			html.Script(g.Attr("src", "https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js")),
 			posthogScript(analyticsConfig),
 		},
 		Body: []g.Node{
 			html.Header(
 				html.H1(g.Text("\U0001F3F4\u200D☠️ "+title)),
-				components.Navigation(currentPath),
+				components.Navigation(currentPath, analyticsConfig.ShowQuiz),
 			),
 			html.Main(g.Attr("class", mainClass), g.Group(children)),
 			html.Footer(
