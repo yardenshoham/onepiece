@@ -11,7 +11,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/yardenshoham/onepiece/internal/web"
 	"github.com/yardenshoham/onepiece/pkg/crunchyroll"
+	"github.com/yardenshoham/onepiece/pkg/onepiecewiki"
 	"github.com/yardenshoham/onepiece/pkg/poller"
+	"github.com/yardenshoham/onepiece/pkg/quiz"
 	"github.com/yardenshoham/onepiece/pkg/tracker"
 )
 
@@ -24,6 +26,7 @@ func newWebCmd() *cobra.Command {
 		healthcheckUUID string
 		posthogKey      string
 		posthogHost     string
+		openrouterKey   string
 	)
 
 	cmd := &cobra.Command{
@@ -71,6 +74,9 @@ func newWebCmd() *cobra.Command {
 					posthogHost = envHost
 				}
 			}
+			if openrouterKey == "" {
+				openrouterKey = os.Getenv("ONEPIECE_OPENROUTER_API_KEY")
+			}
 
 			// Setup signal-based context
 			ctx, cancel := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
@@ -87,6 +93,13 @@ func newWebCmd() *cobra.Command {
 			tr := tracker.NewTracker(logger)
 			p := poller.NewPoller(logger, client, tr, pollInterval, healthcheckUUID)
 
+			// Enable wiki enrichment when quiz generation is configured.
+			if openrouterKey != "" {
+				wikiClient := onepiecewiki.NewClient(logger)
+				p.SetWikiEnricher(wikiClient)
+				logger.Info("wiki enrichment enabled")
+			}
+
 			// Perform initial data fetch synchronously
 			if err := p.Fetch(ctx); err != nil {
 				return fmt.Errorf("initial fetch failed: %w", err)
@@ -100,9 +113,15 @@ func newWebCmd() *cobra.Command {
 			}()
 
 			// Create and start web server
+			var quizGen *quiz.Generator
+			if openrouterKey != "" {
+				quizGen = quiz.NewGenerator(openrouterKey)
+				logger.Info("quiz generation enabled")
+			}
 			server := web.NewServer(logger, p, web.Config{
 				PostHogAPIKey: posthogKey,
 				PostHogHost:   posthogHost,
+				QuizGenerator: quizGen,
 			})
 			return server.ListenAndServe(ctx, addr)
 		},
@@ -115,6 +134,7 @@ func newWebCmd() *cobra.Command {
 	cmd.Flags().StringVar(&healthcheckUUID, "healthcheck-uuid", "", "Healthchecks.io check UUID ($ONEPIECE_HEALTHCHECK_UUID)")
 	cmd.Flags().StringVar(&posthogKey, "posthog-key", "", "PostHog project API key ($ONEPIECE_POSTHOG_KEY)")
 	cmd.Flags().StringVar(&posthogHost, "posthog-host", "", "PostHog API host ($ONEPIECE_POSTHOG_HOST)")
+	cmd.Flags().StringVar(&openrouterKey, "openrouter-key", "", "OpenRouter API key for quiz generation ($ONEPIECE_OPENROUTER_API_KEY)")
 
 	return cmd
 }

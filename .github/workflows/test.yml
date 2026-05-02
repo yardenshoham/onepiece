@@ -17,4 +17,6 @@ jobs:
       - name: Run govulncheck
         run: go tool govulncheck ./...
       - name: Test
+        env:
+          ONEPIECE_OPENROUTER_API_KEY: ${{ secrets.ONEPIECE_OPENROUTER_API_KEY }}
         run: go test -v ./...

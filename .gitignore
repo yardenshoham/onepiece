@@ -2,4 +2,5 @@ dist/
 debug/
 onepiece
 PLAN.md
+node_modules/
 prompt.md
