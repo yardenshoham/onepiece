@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/yardenshoham/onepiece/internal/web/pages"
 	"github.com/yardenshoham/onepiece/pkg/poller"
+	"github.com/yardenshoham/onepiece/pkg/quiz"
 )
 
 //go:embed static
@@ -19,6 +22,9 @@ var staticFiles embed.FS
 type Config struct {
 	PostHogAPIKey string
 	PostHogHost   string
+	// QuizGenerator is set when the OpenRouter API key is available. When nil,
+	// quiz routes are not registered and the Quiz nav link is hidden.
+	QuizGenerator *quiz.Generator
 }
 
 // Server is the HTTP server for the One Piece tracker dashboard.
@@ -27,6 +33,8 @@ type Server struct {
 	poller    *poller.Poller
 	mux       *http.ServeMux
 	analytics pages.AnalyticsConfig
+	quizGen   *quiz.Generator
+	quizState *quiz.State
 }
 
 // NewServer creates an HTTP server with all routes registered.
@@ -38,13 +46,24 @@ func NewServer(logger *slog.Logger, p *poller.Poller, config Config) *Server {
 		analytics: pages.AnalyticsConfig{
 			PostHogAPIKey: config.PostHogAPIKey,
 			PostHogHost:   config.PostHogHost,
+			ShowQuiz:      config.QuizGenerator != nil,
 		},
+		quizGen: config.QuizGenerator,
+	}
+	if config.QuizGenerator != nil {
+		s.quizState = quiz.NewState()
 	}
 
 	s.mux.Handle("GET /static/", http.FileServerFS(staticFiles))
 	s.mux.HandleFunc("GET /{$}", s.handleDashboard)
 	s.mux.HandleFunc("GET /about", s.handleAbout)
 	s.mux.HandleFunc("GET /health", s.handleHealth)
+
+	if config.QuizGenerator != nil {
+		s.mux.HandleFunc("GET /quiz", s.handleQuizPage)
+		s.mux.HandleFunc("POST /quiz/questions", s.handleQuizQuestions)
+		s.mux.HandleFunc("POST /quiz/answer", s.handleQuizAnswer)
+	}
 
 	return s
 }
@@ -113,6 +132,104 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, "ok")
+}
+
+func (s *Server) handleQuizPage(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	profileName := "you've"
+	if d := s.poller.Dashboard(); d != nil && d.ProfileName != "" {
+		profileName = d.ProfileName + " has"
+	}
+	if err := pages.QuizPage(s.analytics, profileName).Render(w); err != nil {
+		s.logger.Error("rendering quiz page", "error", err)
+	}
+}
+
+func (s *Server) handleQuizQuestions(w http.ResponseWriter, r *http.Request) {
+	if !requireHTMX(w, r) {
+		return
+	}
+
+	d := s.poller.Dashboard()
+	if d == nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := pages.QuizErrorFragment("Dashboard not ready yet. Please try again shortly.").Render(w); err != nil {
+			s.logger.Error("rendering quiz error fragment", "error", err)
+		}
+		return
+	}
+
+	limit := min(5, len(d.RecentEpisodes))
+	if limit == 0 {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := pages.QuizErrorFragment("No watched episodes found. Watch some episodes first!").Render(w); err != nil {
+			s.logger.Error("rendering quiz error fragment", "error", err)
+		}
+		return
+	}
+
+	episodes := d.RecentEpisodes[:limit]
+	refresh := r.FormValue("refresh") == "1"
+
+	questions, err := s.quizState.GetOrGenerate(r.Context(), s.quizGen, episodes, refresh)
+	if err != nil {
+		s.logger.Error("generating quiz questions", "error", err)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err2 := pages.QuizErrorFragment("Failed to generate questions. Please try again.").Render(w); err2 != nil {
+			s.logger.Error("rendering quiz error fragment", "error", err2)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := pages.QuizQuestionsFragment(questions, s.quizState.AllAnswered()).Render(w); err != nil {
+		s.logger.Error("rendering quiz questions fragment", "error", err)
+	}
+}
+
+func (s *Server) handleQuizAnswer(w http.ResponseWriter, r *http.Request) {
+	if !requireHTMX(w, r) {
+		return
+	}
+
+	questionID := r.FormValue("question_id")
+	answer := r.FormValue("answer")
+	if questionID == "" || answer == "" {
+		http.Error(w, "question_id and answer are required", http.StatusBadRequest)
+		return
+	}
+
+	q, ok := s.quizState.Answer(questionID, answer)
+	if !ok {
+		http.Error(w, "question not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := pages.QuizAnswerFragment(q, s.quizState.AllAnswered()).Render(w); err != nil {
+		s.logger.Error("rendering quiz answer fragment", "error", err)
+	}
+}
+
+// requireHTMX rejects requests that are not from htmx or that have an
+// unexpected cross-origin Origin header. Returns true when the request is
+// allowed to proceed.
+func requireHTMX(w http.ResponseWriter, r *http.Request) bool {
+	if r.Header.Get("HX-Request") != "true" {
+		http.Error(w, "only htmx requests are accepted", http.StatusBadRequest)
+		return false
+	}
+
+	origin := r.Header.Get("Origin")
+	if origin != "" {
+		u, err := url.Parse(origin)
+		if err != nil || !strings.EqualFold(u.Host, r.Host) {
+			http.Error(w, "cross-origin requests are not allowed", http.StatusForbidden)
+			return false
+		}
+	}
+
+	return true
 }
 
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {

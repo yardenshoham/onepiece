@@ -11,6 +11,7 @@ A web dashboard that tracks your One Piece viewing progress on Crunchyroll.
 - Calculates watch rate (episodes/day) and estimates when you'll catch up
 - Tracks viewing streaks (current and longest consecutive days)
 - Auto-refreshes data every hour in the background
+- **Quiz** — AI-generated trivia questions about your recently watched episodes (requires an OpenRouter API key)
 
 ## Quick Start
 
@@ -40,15 +41,16 @@ docker run -p 8080:8080 \
 
 ## Configuration
 
-| Environment Variable        | Flag                 | Default    | Description                               |
-| --------------------------- | -------------------- | ---------- | ----------------------------------------- |
-| `ONEPIECE_CR_EMAIL`         | `--email`            | (required) | Crunchyroll account email                 |
-| `ONEPIECE_CR_PASSWORD`      | `--password`         | (required) | Crunchyroll account password              |
-| `ONEPIECE_ADDR`             | `--addr`             | `:8080`    | HTTP listen address                       |
-| `ONEPIECE_POLL_INTERVAL`    | `--poll-interval`    | `1h`       | Data refresh interval                     |
-| `ONEPIECE_HEALTHCHECK_UUID` | `--healthcheck-uuid` |            | Healthchecks.io check UUID for monitoring |
-| `ONEPIECE_POSTHOG_KEY`      | `--posthog-key`      |            | PostHog project API key for analytics     |
-| `ONEPIECE_POSTHOG_HOST`     | `--posthog-host`     |            | PostHog API host                          |
+| Environment Variable          | Flag                 | Default    | Description                               |
+| ----------------------------- | -------------------- | ---------- | ----------------------------------------- |
+| `ONEPIECE_CR_EMAIL`           | `--email`            | (required) | Crunchyroll account email                 |
+| `ONEPIECE_CR_PASSWORD`        | `--password`         | (required) | Crunchyroll account password              |
+| `ONEPIECE_ADDR`               | `--addr`             | `:8080`    | HTTP listen address                       |
+| `ONEPIECE_POLL_INTERVAL`      | `--poll-interval`    | `1h`       | Data refresh interval                     |
+| `ONEPIECE_HEALTHCHECK_UUID`   | `--healthcheck-uuid` |            | Healthchecks.io check UUID for monitoring |
+| `ONEPIECE_POSTHOG_KEY`        | `--posthog-key`      |            | PostHog project API key for analytics     |
+| `ONEPIECE_POSTHOG_HOST`       | `--posthog-host`     |            | PostHog API host                          |
+| `ONEPIECE_OPENROUTER_API_KEY` | `--openrouter-key`   |            | OpenRouter API key for quiz generation    |
 
 ## Analytics
 
@@ -57,6 +59,12 @@ Optional PostHog analytics can be enabled by setting `ONEPIECE_POSTHOG_KEY` or p
 - `ONEPIECE_POSTHOG_KEY` or `--posthog-key` enables the PostHog client when set
 - `ONEPIECE_POSTHOG_HOST` or `--posthog-host` overrides the PostHog API host
 - If `ONEPIECE_POSTHOG_HOST` is unset, the app defaults to `https://eu.i.posthog.com`
+
+## Quiz
+
+When `ONEPIECE_OPENROUTER_API_KEY` (or `--openrouter-key`) is set, a **Quiz** page appears in the navigation. It generates 3 multiple-choice trivia questions based on your 5 most recently watched episodes using the [`inception/mercury-2`](https://openrouter.ai/inception/mercury-2) model via [OpenRouter](https://openrouter.ai/).
+
+Episode summaries are automatically enriched from the [One Piece Wiki](https://onepiece.fandom.com/wiki/One_Piece_Wiki) for richer question variety. Previously answered questions are tracked and excluded so each batch is fresh.
 
 ## Monitoring
 

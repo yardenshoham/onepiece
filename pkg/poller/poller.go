@@ -13,6 +13,12 @@ import (
 	"github.com/yardenshoham/onepiece/pkg/tracker"
 )
 
+// WikiEnricher fetches long descriptions for episodes from an external wiki.
+// Implementations must be safe to call concurrently.
+type WikiEnricher interface {
+	FetchLongDescription(ctx context.Context, episodeNumber int) (string, error)
+}
+
 // Poller periodically fetches data from Crunchyroll and recomputes the dashboard.
 type Poller struct {
 	logger      *slog.Logger
@@ -20,9 +26,13 @@ type Poller struct {
 	tracker     *tracker.Tracker
 	interval    time.Duration
 	healthcheck *healthchecks.Client
+	wiki        WikiEnricher
 
 	mu        sync.RWMutex
 	dashboard *tracker.Dashboard
+
+	descMu    sync.Mutex
+	descCache map[int]string // episode number → long description
 }
 
 // NewPoller creates a poller that fetches data and recomputes the dashboard.
@@ -30,16 +40,23 @@ type Poller struct {
 // signals to healthchecks.io for each poll cycle.
 func NewPoller(logger *slog.Logger, client *crunchyroll.Client, tracker *tracker.Tracker, interval time.Duration, healthcheckUUID string) *Poller {
 	p := &Poller{
-		logger:   logger,
-		client:   client,
-		tracker:  tracker,
-		interval: interval,
+		logger:    logger,
+		client:    client,
+		tracker:   tracker,
+		interval:  interval,
+		descCache: make(map[int]string),
 	}
 	if healthcheckUUID != "" {
 		p.healthcheck = healthchecks.NewClient(logger, healthcheckUUID)
 		logger.Info("healthchecks.io monitoring enabled", "uuid", healthcheckUUID)
 	}
 	return p
+}
+
+// SetWikiEnricher registers a WikiEnricher that will populate LongDescription
+// on recent episodes during each poll cycle. Call before the first Fetch.
+func (p *Poller) SetWikiEnricher(w WikiEnricher) {
+	p.wiki = w
 }
 
 // Start begins the polling loop. It blocks until ctx is cancelled.
@@ -102,6 +119,10 @@ func (p *Poller) Fetch(ctx context.Context) error {
 
 	dashboard := p.tracker.Compute(time.Now().UTC(), *profile, history, seasons)
 
+	if p.wiki != nil {
+		p.enrichDashboard(ctx, dashboard)
+	}
+
 	p.mu.Lock()
 	p.dashboard = dashboard
 	p.mu.Unlock()
@@ -134,6 +155,56 @@ func (p *Poller) SetDashboard(d *tracker.Dashboard) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.dashboard = d
+}
+
+// enrichDashboard fetches long descriptions for the first five recent episodes
+// that are not yet in the cache, and writes them into the dashboard in-place.
+// Fetches are concurrent; failures are logged and skipped.
+func (p *Poller) enrichDashboard(ctx context.Context, d *tracker.Dashboard) {
+	limit := min(5, len(d.RecentEpisodes))
+	if limit == 0 {
+		return
+	}
+
+	episodes := d.RecentEpisodes[:limit]
+
+	// Determine which episode numbers need a wiki fetch.
+	p.descMu.Lock()
+	var toFetch []int
+	for _, ep := range episodes {
+		if _, ok := p.descCache[ep.Number]; !ok {
+			toFetch = append(toFetch, ep.Number)
+		}
+	}
+	p.descMu.Unlock()
+
+	if len(toFetch) > 0 {
+		var wg sync.WaitGroup
+		for _, num := range toFetch {
+			wg.Add(1)
+			go func(n int) {
+				defer wg.Done()
+				desc, err := p.wiki.FetchLongDescription(ctx, n)
+				if err != nil {
+					p.logger.Warn("wiki fetch failed", "episode", n, "error", err)
+					return
+				}
+				p.descMu.Lock()
+				p.descCache[n] = desc
+				p.descMu.Unlock()
+			}(num)
+		}
+		wg.Wait()
+	}
+
+	// Apply cached descriptions to the dashboard slice.
+	p.descMu.Lock()
+	defer p.descMu.Unlock()
+	for i := range d.RecentEpisodes {
+		if desc, ok := p.descCache[d.RecentEpisodes[i].Number]; ok {
+			d.RecentEpisodes[i].LongDescription = desc
+		}
+	}
 }
 
 // newUUID generates a random UUID v4 string.
