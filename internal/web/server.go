@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"net/url"
-	"strings"
 	"time"
 
 	"github.com/yardenshoham/onepiece/internal/web/pages"
@@ -211,24 +209,13 @@ func (s *Server) handleQuizAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// requireHTMX rejects requests that are not from htmx or that have an
-// unexpected cross-origin Origin header. Returns true when the request is
-// allowed to proceed.
+// requireHTMX rejects requests that are not from htmx.
+// Returns true when the request is allowed to proceed.
 func requireHTMX(w http.ResponseWriter, r *http.Request) bool {
 	if r.Header.Get("HX-Request") != "true" {
 		http.Error(w, "only htmx requests are accepted", http.StatusBadRequest)
 		return false
 	}
-
-	origin := r.Header.Get("Origin")
-	if origin != "" {
-		u, err := url.Parse(origin)
-		if err != nil || !strings.EqualFold(u.Host, r.Host) {
-			http.Error(w, "cross-origin requests are not allowed", http.StatusForbidden)
-			return false
-		}
-	}
-
 	return true
 }
 

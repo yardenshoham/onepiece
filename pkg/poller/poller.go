@@ -19,6 +19,11 @@ type WikiEnricher interface {
 	FetchLongDescription(ctx context.Context, episodeNumber int) (string, error)
 }
 
+// maxDescCacheSize is the maximum number of episode descriptions kept in memory.
+// When the cache exceeds this size the entry with the smallest (oldest) episode
+// number is evicted to bound memory usage in long-running deployments.
+const maxDescCacheSize = 100
+
 // Poller periodically fetches data from Crunchyroll and recomputes the dashboard.
 type Poller struct {
 	logger      *slog.Logger
@@ -191,6 +196,16 @@ func (p *Poller) enrichDashboard(ctx context.Context, d *tracker.Dashboard) {
 				}
 				p.descMu.Lock()
 				p.descCache[n] = desc
+				for len(p.descCache) > maxDescCacheSize {
+					// Evict the smallest (oldest) episode number.
+					oldest := n
+					for k := range p.descCache {
+						if k < oldest {
+							oldest = k
+						}
+					}
+					delete(p.descCache, oldest)
+				}
 				p.descMu.Unlock()
 			}(num)
 		}

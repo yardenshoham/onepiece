@@ -124,7 +124,7 @@ func (c *Client) fetchSectionText(ctx context.Context, page, sectionIndex string
 	return extractParagraphs(tr.Parse.Text), nil
 }
 
-// get performs an authenticated GET request to the wiki API.
+// get performs a GET request to the wiki API with the provided query parameters.
 func (c *Client) get(ctx context.Context, params url.Values) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiEndpoint+"?"+params.Encode(), nil)
 	if err != nil {
