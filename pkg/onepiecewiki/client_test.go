@@ -104,6 +104,7 @@ func TestNodeText(t *testing.T) {
 // Integration tests — call the real One Piece wiki.
 
 func TestFetchLongDescription_KnownEpisode(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -124,6 +125,7 @@ func TestFetchLongDescription_KnownEpisode(t *testing.T) {
 }
 
 func TestFetchLongDescription_RecentEpisode(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -140,6 +142,7 @@ func TestFetchLongDescription_RecentEpisode(t *testing.T) {
 }
 
 func TestFetchLongDescription_NonExistentEpisode(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
