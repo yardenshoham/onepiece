@@ -52,7 +52,7 @@ func Layout(title, currentPath string, refreshSeconds int, analyticsConfig Analy
 				g.Attr("type", "module"),
 				g.Attr("src", "https://unpkg.com/@github/relative-time-element@5.0.0/dist/index.js"),
 			),
-			html.Script(g.Attr("src", "https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js")),
+			html.Script(g.Attr("src", "https://unpkg.com/htmx.org@2.0.10/dist/htmx.min.js")),
 			posthogScript(analyticsConfig),
 		},
 		Body: []g.Node{
