@@ -28,6 +28,7 @@ const systemPrompt = "You are a One Piece trivia expert. Generate exactly 3 mult
 	"- Wrong options should be plausible alternatives drawn from the provided summaries (e.g. other characters, locations, or outcomes that appear in those episodes) \u2014 not from later in the series.\n" +
 	"- All four answer options must be the same type of thing: if the correct answer is a character name, all options must be character names; if it is a location, all must be locations; if it is an action or outcome, all must be actions or outcomes. A player should not be able to eliminate options by noticing they are a different category.\n" +
 	"- Use correct canonical spelling of all names and places (e.g. Alabasta, not Arabasta).\n" +
+	"- When referring to characters, use their anime name rather than their manga name (e.g. prefer the Funimation/Crunchyroll anime romanisation). If the anime name is unknown, the manga name is acceptable.\n" +
 	"- Before finalising a question, verify: does each wrong option clearly not answer the question, and does the correct option clearly and uniquely answer it?"
 
 const userPromptHeader = "Generate 3 multiple-choice trivia questions about the following One Piece episodes.\n" +
