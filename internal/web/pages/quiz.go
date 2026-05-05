@@ -96,7 +96,12 @@ func questionCard(q quiz.Question) g.Node {
 		g.Attr("id", fmt.Sprintf("quiz-q-%s", q.ID)),
 		g.Attr("class", "quiz-question"),
 		html.P(html.Strong(g.Text(q.Text))),
-		html.Div(g.Attr("class", "quiz-options"), g.Group(buttons)),
+		html.FieldSet(g.Attr("class", "quiz-options"), g.Group(buttons)),
+		html.Span(
+			g.Attr("id", fmt.Sprintf("quiz-q-%s-spinner", q.ID)),
+			g.Attr("class", "quiz-answer-spinner htmx-indicator"),
+			g.Attr("aria-label", "Loading…"),
+		),
 	)
 }
 
@@ -150,6 +155,8 @@ func answerButton(questionID, option string) g.Node {
 		hx.Target(fmt.Sprintf("#quiz-q-%s", questionID)),
 		hx.Swap("outerHTML"),
 		hx.Vals(fmt.Sprintf(`{"question_id":%q,"answer":%q}`, questionID, option)),
+		hx.Indicator(fmt.Sprintf("#quiz-q-%s-spinner", questionID)),
+		g.Attr("hx-disabled-elt", "closest fieldset"),
 		g.Text(option),
 	)
 }
