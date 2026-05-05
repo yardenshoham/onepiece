@@ -17,6 +17,25 @@ const model = "google/gemini-2.5-flash"
 
 const maxTokens = 1500
 
+const systemPrompt = "You are a One Piece trivia expert. Generate exactly 3 multiple-choice quiz questions in the requested JSON format.\n\n" +
+	"Rules:\n" +
+	"- IMPORTANT: Base every question AND every answer option ONLY on information from the episode summaries provided. Do not reference characters, places, events, or outcomes that appear later in the series \u2014 the person answering may not have watched beyond these episodes.\n" +
+	"- Focus on memorable, significant moments: major character decisions, important plot turning points, key reveals, and defining actions \u2014 not obscure details or exact dialogue.\n" +
+	"- Questions should be answerable by someone who watched the episode a while ago and remembers the highlights, not someone reading a transcript.\n" +
+	"- Each question must be grammatically unambiguous: the correct answer must directly and sensibly answer the question as written.\n" +
+	"- Do not embed the answer inside the question text.\n" +
+	"- Keep every answer option brief \u2014 a few words or a short phrase, not full sentences.\n" +
+	"- Wrong options should be plausible alternatives drawn from the provided summaries (e.g. other characters, locations, or outcomes that appear in those episodes) \u2014 not from later in the series.\n" +
+	"- All four answer options must be the same type of thing: if the correct answer is a character name, all options must be character names; if it is a location, all must be locations; if it is an action or outcome, all must be actions or outcomes. A player should not be able to eliminate options by noticing they are a different category.\n" +
+	"- Use correct canonical spelling of all names and places (e.g. Alabasta, not Arabasta).\n" +
+	"- Before finalising a question, verify: does each wrong option clearly not answer the question, and does the correct option clearly and uniquely answer it?"
+
+const userPromptHeader = "Generate 3 multiple-choice trivia questions about the following One Piece episodes.\n" +
+	"Each question must have exactly 1 correct answer and 3 wrong answers.\n" +
+	"IMPORTANT: Only use information from the summaries below \u2014 do not reference anything from later in the series to avoid spoilers.\n" +
+	"Focus on the most memorable and significant moments from the summaries \u2014 things that would stick in a viewer's memory.\n" +
+	"Avoid obscure details, minor background events, or exact dialogue.\n\n"
+
 // EpisodeSource is the episode information passed to the generator.
 type EpisodeSource struct {
 	Number      int
@@ -69,7 +88,7 @@ func (g *Generator) GenerateQuestions(ctx context.Context, episodes []EpisodeSou
 		Messages: []components.ChatMessages{
 			components.CreateChatMessagesSystem(components.ChatSystemMessage{
 				Role:    components.ChatSystemMessageRoleSystem,
-				Content: components.CreateChatSystemMessageContentStr("You are a One Piece trivia expert. Generate exactly 3 multiple-choice quiz questions in the requested JSON format. Keep every answer option brief — a few words or a short phrase, not full sentences. Use correct canonical spelling of all names and places (e.g. Alabasta, not Arabasta)."),
+				Content: components.CreateChatSystemMessageContentStr(systemPrompt),
 			}),
 			components.CreateChatMessagesUser(components.ChatUserMessage{
 				Role:    components.ChatUserMessageRoleUser,
@@ -162,9 +181,7 @@ func validateQuestions(qs []RawQuestion) error {
 // buildPrompt constructs the user prompt from episode sources.
 func buildPrompt(episodes []EpisodeSource, usedQuestions []string) string {
 	var lines strings.Builder
-	lines.WriteString("Generate 3 multiple-choice trivia questions about the following One Piece episodes. " +
-		"Each question must have exactly 1 correct answer and 3 wrong answers. " +
-		"Focus on specific plot events, character actions, and details from the summaries.\n\n")
+	lines.WriteString(userPromptHeader)
 
 	for _, ep := range episodes {
 		fmt.Fprintf(&lines, "### Episode %d: %s\n%s\n\n", ep.Number, ep.Title, ep.Description)
