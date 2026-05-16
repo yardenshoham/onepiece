@@ -28,7 +28,7 @@ func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node
 						g.Text("Since "),
 						g.El("relative-time",
 							g.Attr("datetime", d.FirstWatchDate.Format("2006-01-02T15:04:05Z07:00")),
-						g.Attr("format", "datetime"),
+							g.Attr("format", "datetime"),
 							g.Text(d.FirstWatchDate.Format("Jan 2, 2006")),
 						),
 						g.Textf(" (%d days)", d.DaysSinceFirst),
@@ -85,7 +85,6 @@ func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node
 			),
 			html.P(
 				g.Attr("class", "dashboard-updated"),
-				html.Style("color: var(--text-light, #6c757d); font-size: 0.85em;"),
 				g.Text("Last updated: "),
 				g.El("relative-time",
 					g.Attr("datetime", d.LastUpdated.Format("2006-01-02T15:04:05Z07:00")),

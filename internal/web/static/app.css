@@ -122,6 +122,8 @@ article {
 
 .dashboard-updated {
 	margin-top: 0;
+	color: var(--text-light, #6c757d);
+	font-size: 0.85em;
 }
 
 /* Recent episode cards */
