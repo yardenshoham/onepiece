@@ -136,7 +136,19 @@ func TestDashboardPageWithData(t *testing.T) {
 	}
 
 	if !strings.Contains(body, `<relative-time datetime="2026-04-10T10:30:00Z" format="relative">`) {
-		t.Error("expected dashboard to render relative-time element")
+		t.Error("expected dashboard to render relative-time element for last updated")
+	}
+
+	if !strings.Contains(body, `<relative-time datetime="2026-03-19T00:00:00Z" format="datetime">`) {
+		t.Error("expected dashboard to render relative-time element for first watch date")
+	}
+
+	if !strings.Contains(body, `<relative-time datetime="2026-04-10T09:58:34Z" format="relative">`) {
+		t.Error("expected dashboard to render relative-time element for last episode watched date")
+	}
+
+	if !strings.Contains(body, `<relative-time datetime="2028-03-01T00:00:00Z" format="datetime">`) {
+		t.Error("expected dashboard to render relative-time element for estimated catch-up date")
 	}
 
 	if !strings.Contains(body, "https://unpkg.com/@github/relative-time-element@5.0.0/dist/index.js") {
