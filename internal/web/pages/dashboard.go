@@ -2,6 +2,7 @@ package pages
 
 import (
 	"fmt"
+	"time"
 
 	g "maragu.dev/gomponents"
 	"maragu.dev/gomponents/html"
@@ -29,6 +30,9 @@ func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node
 					html.P(g.Textf("Current: %d days", d.CurrentStreak)),
 					html.P(g.Textf("Best: %d days", d.LongestStreak)),
 				),
+				components.Card("⏱ Time Watched",
+					watchTimeCard(d),
+				),
 				components.Card("📅 Estimated Catch-up",
 					g.If(d.AvgEpisodesPerDay > 0,
 						g.Group([]g.Node{
@@ -40,11 +44,11 @@ func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node
 						html.P(g.Text("N/A")),
 					),
 				),
-			),
-			components.Card("📍 Now Watching",
-				html.P(html.Strong(g.Textf("Episode %d: %s", d.LastEpisode.Number, d.LastEpisode.Title))),
-				html.P(g.Textf("Season: %s", d.CurrentSeason)),
-				html.P(g.Textf("Watched: %s", d.LastEpisode.WatchedAt.Format("Jan 2, 2006"))),
+				components.Card("📍 Now Watching",
+					html.P(html.Strong(g.Textf("Episode %d: %s", d.LastEpisode.Number, d.LastEpisode.Title))),
+					html.P(g.Textf("Season: %s", d.CurrentSeason)),
+					html.P(g.Textf("Watched: %s", d.LastEpisode.WatchedAt.Format("Jan 2, 2006"))),
+				),
 			),
 			html.Article(g.Attr("class", "dashboard-panel"),
 				html.H2(g.Text("📊 Episodes Per Day")),
@@ -123,6 +127,14 @@ func recentEpisodeCards(episodes []tracker.EpisodeInfo) g.Node {
 		))
 	}
 	return html.Div(g.Attr("class", "ep-grid"), g.Group(cards))
+}
+
+// watchTimeCard renders the content for the "Time Watched" card.
+func watchTimeCard(d *tracker.Dashboard) g.Node {
+	total := time.Duration(d.TotalWatchTimeMS) * time.Millisecond
+	days := int(total.Hours()) / 24
+	hours := int(total.Hours()) % 24
+	return html.P(g.Textf("%d days, %d hours", days, hours))
 }
 
 // LoadingPage renders a page shown when data hasn't been fetched yet.

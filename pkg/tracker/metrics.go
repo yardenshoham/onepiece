@@ -34,6 +34,9 @@ type Dashboard struct {
 	// Per-day breakdown for chart
 	DailyEpisodes []DailyCount
 
+	// Total watch time
+	TotalWatchTimeMS int
+
 	// Metadata
 	LastUpdated time.Time
 }

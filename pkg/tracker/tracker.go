@@ -77,6 +77,10 @@ func (t *Tracker) Compute(now time.Time, profile crunchyroll.Profile, history []
 	d.EpisodesWatched = len(deduped)
 	d.EpisodesRemaining = max(d.TotalEpisodes-d.EpisodesWatched, 0)
 
+	for _, e := range deduped {
+		d.TotalWatchTimeMS += e.Panel.EpisodeMetadata.DurationMS
+	}
+
 	if d.TotalEpisodes > 0 {
 		d.ProgressPercent = math.Round(float64(d.EpisodesWatched)/float64(d.TotalEpisodes)*1000) / 10
 	}
