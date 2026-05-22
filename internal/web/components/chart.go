@@ -22,11 +22,13 @@ func DailyChart(data []tracker.DailyCount, profileName string) g.Node {
 		goodColor    = "seagreen"
 		badColor     = "crimson"
 		neutralColor = "steelblue"
+		avgColor     = "darkorange"
 	)
 
-	labels := make([]string, len(data))
-	counts := make([]int, len(data))
-	colors := make([]string, len(data))
+	labels      := make([]string, len(data))
+	counts      := make([]int, len(data))
+	colors      := make([]string, len(data))
+	runningAvgs := make([]float64, len(data))
 
 	cumSum := 0
 	for i, d := range data {
@@ -47,6 +49,7 @@ func DailyChart(data []tracker.DailyCount, profileName string) g.Node {
 			}
 		}
 		cumSum += d.Count
+		runningAvgs[i] = float64(cumSum) / float64(i+1)
 	}
 
 	labelsJSON, err := json.Marshal(labels)
@@ -61,9 +64,13 @@ func DailyChart(data []tracker.DailyCount, profileName string) g.Node {
 	if err != nil {
 		return html.P(g.Textf("Error rendering chart: %v", err))
 	}
+	avgsJSON, err := json.Marshal(runningAvgs)
+	if err != nil {
+		return html.P(g.Textf("Error rendering chart: %v", err))
+	}
 
-	script := fmt.Sprintf(`new Chart(document.getElementById('dailyChart'),{type:'bar',data:{labels:%s,datasets:[{label:'Episodes',data:%s,backgroundColor:%s,borderColor:%s,borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}}});`,
-		labelsJSON, countsJSON, colorsJSON, colorsJSON)
+	script := fmt.Sprintf(`new Chart(document.getElementById('dailyChart'),{type:'bar',data:{labels:%s,datasets:[{label:'Episodes',data:%s,backgroundColor:%s,borderColor:%s,borderWidth:1},{type:'line',label:'Running avg',data:%s,borderColor:'darkorange',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}}});`,
+		labelsJSON, countsJSON, colorsJSON, colorsJSON, avgsJSON)
 
 	return html.Div(
 		html.Div(
@@ -76,6 +83,7 @@ func DailyChart(data []tracker.DailyCount, profileName string) g.Node {
 			legendItem(goodColor, fmt.Sprintf("Good day — above %s's running average", profileName)),
 			legendItem(badColor, fmt.Sprintf("Bad day — below %s's running average", profileName)),
 			legendItem(neutralColor, "Neutral — first day or on average"),
+			legendItem(avgColor, "Running average"),
 		),
 	)
 }
