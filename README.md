@@ -76,7 +76,3 @@ The dashboard supports optional [healthchecks.io](https://healthchecks.io/) moni
 
 Signals use run IDs to correlate start/completion for accurate duration measurement, and include automatic retries with exponential backoff.
 
-## Commands
-
-- `onepiece web` — Start the web dashboard
-- `onepiece version` — Print version information

@@ -74,7 +74,7 @@ func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node
 			),
 			html.Article(g.Attr("class", "dashboard-panel"),
 				html.H2(g.Text("📊 Episodes Per Day")),
-				components.DailyChart(d.DailyEpisodes),
+				components.DailyChart(d.DailyEpisodes, d.ProfileName),
 			),
 			html.Article(g.Attr("class", "dashboard-panel"),
 				html.H2(g.Text("📜 Recent Episodes")),
