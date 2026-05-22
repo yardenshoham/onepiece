@@ -25,10 +25,10 @@ func DailyChart(data []tracker.DailyCount, profileName string) g.Node {
 		avgColor     = "darkorange"
 	)
 
-	labels      := make([]string, len(data))
-	counts      := make([]int, len(data))
-	colors      := make([]string, len(data))
-	runningAvgs := make([]float64, len(data))
+	labels := make([]string, len(data))
+	counts := make([]int, len(data))
+	colors := make([]string, len(data))
+	runningAverages := make([]float64, len(data))
 
 	cumSum := 0
 	for i, d := range data {
@@ -49,7 +49,7 @@ func DailyChart(data []tracker.DailyCount, profileName string) g.Node {
 			}
 		}
 		cumSum += d.Count
-		runningAvgs[i] = float64(cumSum) / float64(i+1)
+		runningAverages[i] = float64(cumSum) / float64(i+1)
 	}
 
 	labelsJSON, err := json.Marshal(labels)
@@ -64,7 +64,7 @@ func DailyChart(data []tracker.DailyCount, profileName string) g.Node {
 	if err != nil {
 		return html.P(g.Textf("Error rendering chart: %v", err))
 	}
-	avgsJSON, err := json.Marshal(runningAvgs)
+	avgsJSON, err := json.Marshal(runningAverages)
 	if err != nil {
 		return html.P(g.Textf("Error rendering chart: %v", err))
 	}
