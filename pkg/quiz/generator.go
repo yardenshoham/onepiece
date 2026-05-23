@@ -61,14 +61,19 @@ type Generator struct {
 	model  string
 }
 
-// NewGenerator returns a Generator that authenticates with the given API key.
-func NewGenerator(apiKey string) *Generator {
+// NewGeneratorWithModel returns a Generator that uses the given OpenRouter model ID.
+func NewGeneratorWithModel(apiKey, model string) *Generator {
 	return &Generator{
 		client: openrouter.New(
 			openrouter.WithSecurity(apiKey),
 		),
 		model: model,
 	}
+}
+
+// NewGenerator returns a Generator that authenticates with the given API key.
+func NewGenerator(apiKey string) *Generator {
+	return NewGeneratorWithModel(apiKey, model)
 }
 
 const maxAttempts = 3
@@ -140,7 +145,7 @@ func (g *Generator) sendRequest(ctx context.Context, req components.ChatRequest)
 	}
 
 	content, ok := choices[0].Message.Content.Get()
-	if !ok {
+	if !ok || content == nil {
 		return nil, fmt.Errorf("OpenRouter response has no content")
 	}
 	if content.Str == nil {
