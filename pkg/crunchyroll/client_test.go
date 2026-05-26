@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 )
@@ -316,4 +317,30 @@ func TestDeriveDeviceID(t *testing.T) {
 	if id3 := DeriveDeviceID("other@example.com"); id == id3 {
 		t.Error("different emails should produce different device IDs")
 	}
+}
+
+func TestIntegrationGetProfile(t *testing.T) {
+	t.Parallel()
+
+	email := os.Getenv("ONEPIECE_CR_EMAIL")
+	password := os.Getenv("ONEPIECE_CR_PASSWORD")
+	if email == "" || password == "" {
+		t.Skip("ONEPIECE_CR_EMAIL and ONEPIECE_CR_PASSWORD not set")
+	}
+
+	ctx := t.Context()
+
+	client, err := NewClient(ctx, slog.Default(), email, password)
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+
+	profile, err := client.GetProfile(ctx)
+	if err != nil {
+		t.Fatalf("GetProfile: %v", err)
+	}
+	if profile.ProfileName == "" {
+		t.Error("got empty profile_name")
+	}
+	t.Logf("profile_name: %q", profile.ProfileName)
 }

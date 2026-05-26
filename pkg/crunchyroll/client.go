@@ -18,7 +18,7 @@ const (
 	baseURL        = "https://www.crunchyroll.com"
 	authEndpoint   = baseURL + "/auth/v1/token"
 	profileURL     = baseURL + "/accounts/v1/me/profile"
-	basicAuthToken = "eTJhcnZqYjBoMHJndnRpemxvdnk6SlZMdndkSXBYdnhVLXFJQnZUMU04b1FUcjFxbFFKWDI="
+	basicAuthToken = "eHVuaWh2ZWRidDNtYmlzdWhldnQ6MWtJUzVkeVR2akUwX3JxYUEzWWVBaDBiVVhVbXhXMTE="
 	userAgent      = "Crunchyroll/ANDROIDTV/3.59.0_22338 (Android 13.0; en-US; TCL-S5400AF Build/TP1A.220624.014)"
 	pageSize       = 100
 
