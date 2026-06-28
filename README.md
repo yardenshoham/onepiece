@@ -8,7 +8,9 @@ A web dashboard that tracks your One Piece viewing progress on Crunchyroll.
 
 ### Dashboard
 
-<img width="1035" height="3224" alt="Dashboard" src="https://github.com/user-attachments/assets/bafda86b-f7eb-44c7-b358-fd9fa3e4bc06" />
+<img width="1302" height="1168" alt="Dashboard top" src="https://github.com/user-attachments/assets/04eb51c4-8a62-4759-bbd9-5ef245e6e0eb" />
+
+<img width="1340" height="945" alt="Dashboard bottom" src="https://github.com/user-attachments/assets/6daa2039-1e67-43fc-a39d-3b0daab28a86" />
 
 ### Quiz
 
@@ -85,4 +87,3 @@ The dashboard supports optional [healthchecks.io](https://healthchecks.io/) moni
 - A **failure** signal with error details if the poll fails
 
 Signals use run IDs to correlate start/completion for accurate duration measurement, and include automatic retries with exponential backoff.
-
