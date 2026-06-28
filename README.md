@@ -4,6 +4,16 @@
 
 A web dashboard that tracks your One Piece viewing progress on Crunchyroll.
 
+## Screenshots
+
+### Dashboard
+
+<img width="1035" height="3224" alt="Dashboard" src="https://github.com/user-attachments/assets/bafda86b-f7eb-44c7-b358-fd9fa3e4bc06" />
+
+### Quiz
+
+<img width="1035" height="1669" alt="Quiz" src="https://github.com/user-attachments/assets/9327e702-8031-4029-9776-bf9d823be4d8" />
+
 ## Features
 
 - Connects to the Crunchyroll API to fetch your One Piece watch history
