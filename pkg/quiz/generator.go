@@ -85,7 +85,7 @@ const maxAttempts = 3
 func (g *Generator) GenerateQuestions(ctx context.Context, episodes []EpisodeSource, usedQuestions []string) ([]RawQuestion, error) {
 	prompt := buildPrompt(episodes, usedQuestions)
 
-	effort := components.EffortMedium
+	effort := components.ChatRequestEffortMedium
 	trueVal := true
 	maxT := int64(maxTokens)
 
@@ -102,7 +102,7 @@ func (g *Generator) GenerateQuestions(ctx context.Context, episodes []EpisodeSou
 			}),
 		},
 		MaxTokens: optionalnullable.From(&maxT),
-		Reasoning: &components.Reasoning{
+		Reasoning: &components.ChatRequestReasoning{
 			Effort: optionalnullable.From(&effort),
 		},
 		Provider: optionalnullable.From(&components.ProviderPreferences{
@@ -130,7 +130,7 @@ func (g *Generator) GenerateQuestions(ctx context.Context, episodes []EpisodeSou
 }
 
 func (g *Generator) sendRequest(ctx context.Context, req components.ChatRequest) ([]RawQuestion, error) {
-	resp, err := g.client.Chat.Send(ctx, req)
+	resp, err := g.client.Chat.Send(ctx, req, nil)
 	if err != nil {
 		return nil, fmt.Errorf("OpenRouter request: %w", err)
 	}
