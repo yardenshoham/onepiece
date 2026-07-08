@@ -39,10 +39,11 @@ func DailyChart(data []tracker.DailyCount, profileName string) g.Node {
 			colors[i] = neutralColor
 		} else {
 			avg := float64(cumSum) / float64(i)
+			diff := float64(d.Count) - avg
 			switch {
-			case float64(d.Count) > avg:
+			case diff > 0.1:
 				colors[i] = goodColor
-			case float64(d.Count) < avg:
+			case diff < -0.1:
 				colors[i] = badColor
 			default:
 				colors[i] = neutralColor
