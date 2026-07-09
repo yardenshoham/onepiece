@@ -5,7 +5,7 @@ go 1.26.5
 require (
 	github.com/OpenRouterTeam/go-sdk v0.5.12
 	github.com/spf13/cobra v1.10.2
-	golang.org/x/net v0.56.0
+	golang.org/x/net v0.57.0
 	maragu.dev/gomponents v1.3.0
 	maragu.dev/gomponents-htmx v0.6.1
 )
@@ -17,7 +17,7 @@ require (
 	github.com/spyzhov/ajson v0.8.0 // indirect
 	golang.org/x/mod v0.37.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/telemetry v0.0.0-20260625142307-59b4966ccb57 // indirect
 	golang.org/x/tools v0.47.0 // indirect
 	golang.org/x/vuln v1.5.0 // indirect
