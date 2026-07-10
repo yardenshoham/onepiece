@@ -74,7 +74,7 @@ Optional PostHog analytics can be enabled by setting `ONEPIECE_POSTHOG_KEY` or p
 
 ## Quiz
 
-When `ONEPIECE_OPENROUTER_API_KEY` (or `--openrouter-key`) is set, a **Quiz** page appears in the navigation. It generates 3 multiple-choice trivia questions based on your 5 most recently watched episodes using the [`google/gemini-2.5-flash`](https://openrouter.ai/google/gemini-2.5-flash) model via [OpenRouter](https://openrouter.ai/).
+When `ONEPIECE_OPENROUTER_API_KEY` (or `--openrouter-key`) is set, a **Quiz** page appears in the navigation. It generates 3 multiple-choice trivia questions based on your 5 most recently watched episodes using the [`openai/gpt-5.6-luna`](https://openrouter.ai/openai/gpt-5.6-luna) model via [OpenRouter](https://openrouter.ai/).
 
 Episode summaries are automatically enriched from the [One Piece Wiki](https://onepiece.fandom.com/wiki/One_Piece_Wiki) for richer question variety. Previously answered questions are tracked and excluded so each batch is fresh.
 

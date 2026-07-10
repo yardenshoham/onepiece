@@ -13,7 +13,7 @@ import (
 	"github.com/OpenRouterTeam/go-sdk/optionalnullable"
 )
 
-const model = "google/gemini-2.5-flash"
+const model = "openai/gpt-5.6-luna"
 
 const maxTokens = 1500
 
