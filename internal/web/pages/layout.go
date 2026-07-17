@@ -50,7 +50,7 @@ func Layout(title, currentPath string, refreshSeconds int, analyticsConfig Analy
 			html.Script(g.Attr("src", "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js")),
 			html.Script(
 				g.Attr("type", "module"),
-				g.Attr("src", "https://unpkg.com/@github/relative-time-element@5.2.0/dist/index.js"),
+				g.Attr("src", "https://unpkg.com/@github/relative-time-element@5.3.0/dist/index.js"),
 			),
 			html.Script(g.Attr("src", "https://unpkg.com/htmx.org@2.0.10/dist/htmx.min.js")),
 			posthogScript(analyticsConfig),
