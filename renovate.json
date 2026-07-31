@@ -7,12 +7,26 @@
   "postUpdateOptions": [
     "gomodTidy"
   ],
+  "packageRules": [
+    {
+      "description": "Limit frequent OpenRouter SDK updates to one weekly window",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "github.com/OpenRouterTeam/go-sdk"
+      ],
+      "schedule": [
+        "* 0-3 * * 1"
+      ]
+    }
+  ],
   "customManagers": [
     {
       "customType": "regex",
       "description": "Update golangci-lint version in GitHub workflows",
-      "fileMatch": [
-        "\\.github/workflows/golangci-lint\\.yml$"
+      "managerFilePatterns": [
+        "/\\.github/workflows/golangci-lint\\.yml$/"
       ],
       "matchStrings": [
         "version: v(?<currentValue>[\\d.]+)"
@@ -23,8 +37,8 @@
     {
       "customType": "regex",
       "description": "Update JavaScript and CSS CDN dependencies in Go templates",
-      "fileMatch": [
-        "\\.go$"
+      "managerFilePatterns": [
+        "/\\.go$/"
       ],
       "matchStrings": [
         "https://(?:unpkg\\.com|cdn\\.jsdelivr\\.net/npm)/(?<depName>@?[^@\\s\"]+)@(?<currentValue>[\\d.]+)"
