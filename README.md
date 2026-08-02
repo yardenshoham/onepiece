@@ -1,7 +1,5 @@
 # onepiece
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/yardenshoham/onepiece)](https://goreportcard.com/report/github.com/yardenshoham/onepiece)
-
 A web dashboard that tracks your One Piece viewing progress on Crunchyroll.
 
 ## Screenshots
