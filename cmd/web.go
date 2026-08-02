@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/yardenshoham/onepiece/internal/web"
 	"github.com/yardenshoham/onepiece/pkg/crunchyroll"
 	"github.com/yardenshoham/onepiece/pkg/onepiecewiki"
@@ -16,6 +17,37 @@ import (
 	"github.com/yardenshoham/onepiece/pkg/quiz"
 	"github.com/yardenshoham/onepiece/pkg/tracker"
 )
+
+// webFlagEnv pairs each web flag with the environment variable that supplies
+// its fallback value.
+var webFlagEnv = []struct{ flag, env string }{
+	{"email", "ONEPIECE_CR_EMAIL"},
+	{"password", "ONEPIECE_CR_PASSWORD"},
+	{"addr", "ONEPIECE_ADDR"},
+	{"poll-interval", "ONEPIECE_POLL_INTERVAL"},
+	{"healthcheck-uuid", "ONEPIECE_HEALTHCHECK_UUID"},
+	{"posthog-key", "ONEPIECE_POSTHOG_KEY"},
+	{"posthog-host", "ONEPIECE_POSTHOG_HOST"},
+	{"openrouter-key", "ONEPIECE_OPENROUTER_API_KEY"},
+}
+
+// resolveFlagsFromEnv fills in every flag that was not passed on the command
+// line from its environment variable, letting pflag parse the value.
+func resolveFlagsFromEnv(flags *pflag.FlagSet) error {
+	for _, fe := range webFlagEnv {
+		if flags.Changed(fe.flag) {
+			continue
+		}
+		value := os.Getenv(fe.env)
+		if value == "" {
+			continue
+		}
+		if err := flags.Set(fe.flag, value); err != nil {
+			return fmt.Errorf("invalid %s: %w", fe.env, err)
+		}
+	}
+	return nil
+}
 
 func newWebCmd() *cobra.Command {
 	var (
@@ -36,46 +68,11 @@ func newWebCmd() *cobra.Command {
 			logger := cmd.Context().Value(loggerKey{}).(*slog.Logger)
 
 			// Resolve flags from env if not set
-			if email == "" {
-				email = os.Getenv("ONEPIECE_CR_EMAIL")
-			}
-			if password == "" {
-				password = os.Getenv("ONEPIECE_CR_PASSWORD")
+			if err := resolveFlagsFromEnv(cmd.Flags()); err != nil {
+				return fmt.Errorf("resolving flags from environment: %w", err)
 			}
 			if email == "" || password == "" {
 				return fmt.Errorf("email and password are required (use --email/--password flags or ONEPIECE_CR_EMAIL/ONEPIECE_CR_PASSWORD env vars)")
-			}
-
-			if !cmd.Flags().Changed("addr") {
-				if envAddr := os.Getenv("ONEPIECE_ADDR"); envAddr != "" {
-					addr = envAddr
-				}
-			}
-			if !cmd.Flags().Changed("poll-interval") {
-				if envInterval := os.Getenv("ONEPIECE_POLL_INTERVAL"); envInterval != "" {
-					d, err := time.ParseDuration(envInterval)
-					if err != nil {
-						return fmt.Errorf("invalid ONEPIECE_POLL_INTERVAL: %w", err)
-					}
-					pollInterval = d
-				}
-			}
-
-			if healthcheckUUID == "" {
-				healthcheckUUID = os.Getenv("ONEPIECE_HEALTHCHECK_UUID")
-			}
-			if !cmd.Flags().Changed("posthog-key") {
-				if envKey := os.Getenv("ONEPIECE_POSTHOG_KEY"); envKey != "" {
-					posthogKey = envKey
-				}
-			}
-			if !cmd.Flags().Changed("posthog-host") {
-				if envHost := os.Getenv("ONEPIECE_POSTHOG_HOST"); envHost != "" {
-					posthogHost = envHost
-				}
-			}
-			if openrouterKey == "" {
-				openrouterKey = os.Getenv("ONEPIECE_OPENROUTER_API_KEY")
 			}
 
 			// Setup signal-based context
