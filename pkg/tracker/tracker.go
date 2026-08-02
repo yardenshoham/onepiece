@@ -3,13 +3,15 @@ package tracker
 import (
 	"log/slog"
 	"math"
-	"slices"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/yardenshoham/onepiece/pkg/crunchyroll"
 )
+
+// dateFormat is the layout used for DailyCount.Date keys (UTC calendar days).
+const dateFormat = "2006-01-02"
 
 // Tracker computes dashboard metrics from raw API data.
 type Tracker struct {
@@ -113,27 +115,16 @@ func (t *Tracker) Compute(now time.Time, profile crunchyroll.Profile, history []
 	// Build daily episode counts
 	dailyMap := make(map[string]int)
 	for _, e := range deduped {
-		day := e.DatePlayed.UTC().Truncate(24 * time.Hour).Format("2006-01-02")
-		dailyMap[day]++
+		dailyMap[e.DatePlayed.UTC().Truncate(24*time.Hour).Format(dateFormat)]++
 	}
 
+	// Every watched day lies between firstDate and lastDate, so walking the
+	// range fills the gaps and yields the counts already sorted.
 	lastDate := lastEntry.DatePlayed.UTC().Truncate(24 * time.Hour)
+	d.DailyEpisodes = make([]DailyCount, 0, int(lastDate.Sub(firstDate)/(24*time.Hour))+1)
 	for day := firstDate; !day.After(lastDate); day = day.AddDate(0, 0, 1) {
-		key := day.Format("2006-01-02")
-		count := dailyMap[key]
-		dailyMap[key] = count // ensure key exists
-	}
-
-	// Sort daily counts
-	var dailyKeys []string
-	for k := range dailyMap {
-		dailyKeys = append(dailyKeys, k)
-	}
-	slices.Sort(dailyKeys)
-
-	d.DailyEpisodes = make([]DailyCount, 0, len(dailyKeys))
-	for _, k := range dailyKeys {
-		d.DailyEpisodes = append(d.DailyEpisodes, DailyCount{Date: k, Count: dailyMap[k]})
+		key := day.Format(dateFormat)
+		d.DailyEpisodes = append(d.DailyEpisodes, DailyCount{Date: key, Count: dailyMap[key]})
 	}
 
 	// Calculate streaks
@@ -169,13 +160,13 @@ func calculateStreaks(daily []DailyCount, now time.Time) (current, longest int) 
 
 	// Current streak: count back from today (or yesterday if no watch today)
 	start := now
-	if !watchDays[now.Format("2006-01-02")] {
+	if !watchDays[now.Format(dateFormat)] {
 		start = now.AddDate(0, 0, -1)
 	}
-	if watchDays[start.Format("2006-01-02")] {
+	if watchDays[start.Format(dateFormat)] {
 		current = 1
 		d := start.AddDate(0, 0, -1)
-		for watchDays[d.Format("2006-01-02")] {
+		for watchDays[d.Format(dateFormat)] {
 			current++
 			d = d.AddDate(0, 0, -1)
 		}
