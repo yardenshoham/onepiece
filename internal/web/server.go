@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	g "maragu.dev/gomponents"
+
 	"github.com/yardenshoham/onepiece/internal/web/pages"
 	"github.com/yardenshoham/onepiece/pkg/poller"
 	"github.com/yardenshoham/onepiece/pkg/quiz"
@@ -91,35 +93,31 @@ func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 	}
 }
 
+// render writes n as an HTML response, logging a failure to render as what.
+func (s *Server) render(w http.ResponseWriter, what string, n g.Node) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := n.Render(w); err != nil {
+		s.logger.Error("rendering "+what, "error", err)
+	}
+}
+
 func (s *Server) handleDashboard(w http.ResponseWriter, _ *http.Request) {
 	d := s.poller.Dashboard()
 	if d == nil {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := pages.LoadingPage(s.analytics).Render(w); err != nil {
-			s.logger.Error("rendering loading page", "error", err)
-		}
+		s.render(w, "loading page", pages.LoadingPage(s.analytics))
 		return
 	}
 
 	if d.EpisodesWatched == 0 {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := pages.Layout("One Piece Tracker", "/", 7200, s.analytics).Render(w); err != nil {
-			s.logger.Error("rendering empty dashboard", "error", err)
-		}
+		s.render(w, "empty dashboard", pages.Layout("One Piece Tracker", "/", 7200, s.analytics))
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.DashboardPage(d, s.analytics).Render(w); err != nil {
-		s.logger.Error("rendering dashboard", "error", err)
-	}
+	s.render(w, "dashboard", pages.DashboardPage(d, s.analytics))
 }
 
 func (s *Server) handleAbout(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.AboutPage(s.analytics).Render(w); err != nil {
-		s.logger.Error("rendering about page", "error", err)
-	}
+	s.render(w, "about page", pages.AboutPage(s.analytics))
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
@@ -133,14 +131,11 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) handleQuizPage(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	profileName := "you've"
 	if d := s.poller.Dashboard(); d != nil && d.ProfileName != "" {
 		profileName = d.ProfileName + " has"
 	}
-	if err := pages.QuizPage(s.analytics, profileName).Render(w); err != nil {
-		s.logger.Error("rendering quiz page", "error", err)
-	}
+	s.render(w, "quiz page", pages.QuizPage(s.analytics, profileName))
 }
 
 func (s *Server) handleQuizQuestions(w http.ResponseWriter, r *http.Request) {
@@ -150,19 +145,13 @@ func (s *Server) handleQuizQuestions(w http.ResponseWriter, r *http.Request) {
 
 	d := s.poller.Dashboard()
 	if d == nil {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := pages.QuizErrorFragment("Dashboard not ready yet. Please try again shortly.").Render(w); err != nil {
-			s.logger.Error("rendering quiz error fragment", "error", err)
-		}
+		s.render(w, "quiz error fragment", pages.QuizErrorFragment("Dashboard not ready yet. Please try again shortly."))
 		return
 	}
 
 	limit := min(5, len(d.RecentEpisodes))
 	if limit == 0 {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := pages.QuizErrorFragment("No watched episodes found. Watch some episodes first!").Render(w); err != nil {
-			s.logger.Error("rendering quiz error fragment", "error", err)
-		}
+		s.render(w, "quiz error fragment", pages.QuizErrorFragment("No watched episodes found. Watch some episodes first!"))
 		return
 	}
 
@@ -172,17 +161,11 @@ func (s *Server) handleQuizQuestions(w http.ResponseWriter, r *http.Request) {
 	questions, err := s.quizState.GetOrGenerate(r.Context(), s.quizGen, episodes, refresh)
 	if err != nil {
 		s.logger.Error("generating quiz questions", "error", err)
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err2 := pages.QuizErrorFragment("Failed to generate questions. Please try again.").Render(w); err2 != nil {
-			s.logger.Error("rendering quiz error fragment", "error", err2)
-		}
+		s.render(w, "quiz error fragment", pages.QuizErrorFragment("Failed to generate questions. Please try again."))
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.QuizQuestionsFragment(questions).Render(w); err != nil {
-		s.logger.Error("rendering quiz questions fragment", "error", err)
-	}
+	s.render(w, "quiz questions fragment", pages.QuizQuestionsFragment(questions))
 }
 
 func (s *Server) handleQuizAnswer(w http.ResponseWriter, r *http.Request) {
@@ -203,10 +186,7 @@ func (s *Server) handleQuizAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.QuizAnswerFragment(q, s.quizState.AllAnswered()).Render(w); err != nil {
-		s.logger.Error("rendering quiz answer fragment", "error", err)
-	}
+	s.render(w, "quiz answer fragment", pages.QuizAnswerFragment(q, s.quizState.AllAnswered()))
 }
 
 // requireHTMX rejects requests that are not from htmx.
