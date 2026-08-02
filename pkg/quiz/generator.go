@@ -60,19 +60,14 @@ type Generator struct {
 	model  string
 }
 
-// NewGeneratorWithModel returns a Generator that uses the given OpenRouter model ID.
-func NewGeneratorWithModel(apiKey, model string) *Generator {
+// NewGenerator returns a Generator that authenticates with the given API key.
+func NewGenerator(apiKey string) *Generator {
 	return &Generator{
 		client: openrouter.New(
 			openrouter.WithSecurity(apiKey),
 		),
 		model: model,
 	}
-}
-
-// NewGenerator returns a Generator that authenticates with the given API key.
-func NewGenerator(apiKey string) *Generator {
-	return NewGeneratorWithModel(apiKey, model)
 }
 
 const maxAttempts = 3

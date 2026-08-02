@@ -14,7 +14,6 @@ import (
 // Question holds a single quiz question and its answer state.
 type Question struct {
 	ID            string
-	EpisodeNumber int
 	Text          string
 	CorrectOption string
 	WrongOptions  []string // exactly 3
@@ -83,7 +82,6 @@ func (s *State) GetOrGenerate(ctx context.Context, gen *Generator, episodes []tr
 	for i, r := range raw {
 		questions[i] = Question{
 			ID:            newID(),
-			EpisodeNumber: srcs[i%len(srcs)].Number,
 			Text:          r.Question,
 			CorrectOption: r.CorrectOption,
 			WrongOptions:  r.WrongOptions,
