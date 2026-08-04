@@ -151,7 +151,7 @@ func TestDashboardPageWithData(t *testing.T) {
 		t.Error("expected dashboard to render relative-time element for estimated catch-up date")
 	}
 
-	if !strings.Contains(body, "https://unpkg.com/@github/relative-time-element@5.3.0/dist/index.js") {
+	if !strings.Contains(body, "https://unpkg.com/@github/relative-time-element@5.3.1/dist/index.js") {
 		t.Error("expected dashboard to include relative-time-element script")
 	}
 }
