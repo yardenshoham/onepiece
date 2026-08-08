@@ -152,31 +152,6 @@ func TestParseSeasonsResponse(t *testing.T) {
 	}
 }
 
-func TestParseSeriesResponse(t *testing.T) {
-	t.Parallel()
-
-	raw := `{
-		"data": [
-			{
-				"id": "GRMG8ZQZR",
-				"title": "One Piece"
-			}
-		]
-	}`
-
-	var resp seriesResponse
-	if err := json.Unmarshal([]byte(raw), &resp); err != nil {
-		t.Fatalf("failed to unmarshal: %v", err)
-	}
-
-	if len(resp.Data) != 1 {
-		t.Fatalf("got %d series, want %d", len(resp.Data), 1)
-	}
-	if resp.Data[0].Title != "One Piece" {
-		t.Errorf("got title %q, want %q", resp.Data[0].Title, "One Piece")
-	}
-}
-
 func TestParseProfile(t *testing.T) {
 	t.Parallel()
 

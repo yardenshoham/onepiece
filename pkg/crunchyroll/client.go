@@ -249,25 +249,6 @@ func (c *Client) GetSeasons(ctx context.Context, seriesID string) ([]Season, err
 	return resp.Data, nil
 }
 
-// GetSeries returns series metadata.
-func (c *Client) GetSeries(ctx context.Context, seriesID string) (*Series, error) {
-	u := fmt.Sprintf("%s/content/v2/cms/series/%s?locale=en-US", baseURL, seriesID)
-
-	body, err := c.doGet(ctx, u)
-	if err != nil {
-		return nil, fmt.Errorf("getting series: %w", err)
-	}
-
-	var resp seriesResponse
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, fmt.Errorf("decoding series: %w", err)
-	}
-	if len(resp.Data) == 0 {
-		return nil, fmt.Errorf("no series data returned for %s", seriesID)
-	}
-	return &resp.Data[0], nil
-}
-
 // DeriveDeviceID returns a deterministic UUID-v4-shaped device ID derived from
 // the user's email so the same device ID is reused across restarts.
 func DeriveDeviceID(email string) string {

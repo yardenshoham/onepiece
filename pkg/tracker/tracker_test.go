@@ -20,88 +20,96 @@ func makeEntry(episodeNum int, title, seasonTitle string, datePlayed time.Time, 
 				SeasonNumber:  1,
 				SeasonTitle:   seasonTitle,
 				SeriesID:      crunchyroll.OnePieceSeriesID,
-				SeriesTitle:   "One Piece",
 			},
 		},
 	}
 }
 
-func TestComputeZeroEpisodes(t *testing.T) {
+func TestComputeCounts(t *testing.T) {
 	t.Parallel()
-	tr := NewTracker(slog.Default())
 
-	profile := crunchyroll.Profile{ProfileName: "Test"}
-	seasons := []crunchyroll.Season{{NumberOfEpisodes: 61, SlugTitle: "east-blue-1-61"}}
+	base := time.Date(2026, 4, 1, 10, 0, 0, 0, time.UTC)
 	now := time.Date(2026, 4, 21, 12, 0, 0, 0, time.UTC)
 
-	d := tr.Compute(now, profile, nil, seasons)
-
-	if d.EpisodesWatched != 0 {
-		t.Errorf("got EpisodesWatched %d, want 0", d.EpisodesWatched)
-	}
-	if d.TotalEpisodes != 61 {
-		t.Errorf("got TotalEpisodes %d, want 61", d.TotalEpisodes)
-	}
-	if d.ProgressPercent != 0 {
-		t.Errorf("got ProgressPercent %f, want 0", d.ProgressPercent)
-	}
-}
-
-func TestComputeFiltersNonOnePiece(t *testing.T) {
-	t.Parallel()
-	tr := NewTracker(slog.Default())
-
-	profile := crunchyroll.Profile{ProfileName: "Test"}
-	seasons := []crunchyroll.Season{{NumberOfEpisodes: 100, SlugTitle: "east-blue"}}
-
-	now := time.Date(2026, 4, 21, 12, 0, 0, 0, time.UTC)
-	nonOP := crunchyroll.WatchHistoryEntry{
-		DatePlayed:   time.Date(2026, 4, 1, 10, 0, 0, 0, time.UTC),
-		FullyWatched: true,
-		Panel: crunchyroll.Panel{
-			Title: "Some Other Show",
-			EpisodeMetadata: crunchyroll.EpisodeMetadata{
-				EpisodeNumber: 1,
-				SeriesID:      "OTHER-SERIES",
+	tests := []struct {
+		name         string
+		history      []crunchyroll.WatchHistoryEntry
+		seasons      []crunchyroll.Season
+		wantWatched  int
+		wantTotal    int
+		wantProgress float64
+	}{
+		{
+			name:        "no history",
+			seasons:     []crunchyroll.Season{{NumberOfEpisodes: 61, SlugTitle: "east-blue-1-61"}},
+			wantWatched: 0,
+			wantTotal:   61,
+		},
+		{
+			name: "non-One Piece entries are filtered out",
+			history: []crunchyroll.WatchHistoryEntry{{
+				DatePlayed:   base,
+				FullyWatched: true,
+				Panel: crunchyroll.Panel{
+					Title: "Some Other Show",
+					EpisodeMetadata: crunchyroll.EpisodeMetadata{
+						EpisodeNumber: 1,
+						SeriesID:      "OTHER-SERIES",
+					},
+				},
+			}},
+			seasons:     []crunchyroll.Season{{NumberOfEpisodes: 100, SlugTitle: "east-blue"}},
+			wantWatched: 0,
+			wantTotal:   100,
+		},
+		{
+			name:         "partially watched still counts",
+			history:      []crunchyroll.WatchHistoryEntry{makeEntry(1, "Ep 1", "East Blue", base, false)},
+			seasons:      []crunchyroll.Season{{NumberOfEpisodes: 100, SlugTitle: "east-blue"}},
+			wantWatched:  1,
+			wantTotal:    100,
+			wantProgress: 1.0,
+		},
+		{
+			name: "remastered seasons excluded from the total",
+			seasons: []crunchyroll.Season{
+				{NumberOfEpisodes: 61, SlugTitle: "east-blue-1-61"},
+				{NumberOfEpisodes: 21, SlugTitle: "one-piece-log-fish-man-island-saga-remastered--re-edited"},
 			},
+			wantWatched: 0,
+			wantTotal:   61,
+		},
+		{
+			name: "the same episode watched twice counts once",
+			history: []crunchyroll.WatchHistoryEntry{
+				makeEntry(1, "Ep 1", "East Blue", base, true),
+				makeEntry(1, "Ep 1", "East Blue", base.Add(time.Hour), true), // duplicate
+				makeEntry(2, "Ep 2", "East Blue", base.Add(2*time.Hour), true),
+			},
+			seasons:      []crunchyroll.Season{{NumberOfEpisodes: 100, SlugTitle: "east-blue"}},
+			wantWatched:  2,
+			wantTotal:    100,
+			wantProgress: 2.0,
 		},
 	}
 
-	d := tr.Compute(now, profile, []crunchyroll.WatchHistoryEntry{nonOP}, seasons)
-	if d.EpisodesWatched != 0 {
-		t.Errorf("got EpisodesWatched %d, want 0 (non-OP filtered)", d.EpisodesWatched)
-	}
-}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			tr := NewTracker(slog.Default())
 
-func TestComputeCountsPartiallyWatched(t *testing.T) {
-	t.Parallel()
-	tr := NewTracker(slog.Default())
+			d := tr.Compute(now, crunchyroll.Profile{ProfileName: "Test"}, tt.history, tt.seasons)
 
-	profile := crunchyroll.Profile{ProfileName: "Test"}
-	seasons := []crunchyroll.Season{{NumberOfEpisodes: 100, SlugTitle: "east-blue"}}
-
-	now := time.Date(2026, 4, 21, 12, 0, 0, 0, time.UTC)
-	partial := makeEntry(1, "Ep 1", "East Blue", time.Date(2026, 4, 1, 10, 0, 0, 0, time.UTC), false)
-	d := tr.Compute(now, profile, []crunchyroll.WatchHistoryEntry{partial}, seasons)
-	if d.EpisodesWatched != 1 {
-		t.Errorf("got EpisodesWatched %d, want 1 (partially watched still counts)", d.EpisodesWatched)
-	}
-}
-
-func TestComputeExcludesRemasteredSeasons(t *testing.T) {
-	t.Parallel()
-	tr := NewTracker(slog.Default())
-
-	profile := crunchyroll.Profile{ProfileName: "Test"}
-	seasons := []crunchyroll.Season{
-		{NumberOfEpisodes: 61, SlugTitle: "east-blue-1-61"},
-		{NumberOfEpisodes: 21, SlugTitle: "one-piece-log-fish-man-island-saga-remastered--re-edited"},
-	}
-
-	now := time.Date(2026, 4, 21, 12, 0, 0, 0, time.UTC)
-	d := tr.Compute(now, profile, nil, seasons)
-	if d.TotalEpisodes != 61 {
-		t.Errorf("got TotalEpisodes %d, want 61 (remastered excluded)", d.TotalEpisodes)
+			if d.EpisodesWatched != tt.wantWatched {
+				t.Errorf("got EpisodesWatched %d, want %d", d.EpisodesWatched, tt.wantWatched)
+			}
+			if d.TotalEpisodes != tt.wantTotal {
+				t.Errorf("got TotalEpisodes %d, want %d", d.TotalEpisodes, tt.wantTotal)
+			}
+			if d.ProgressPercent != tt.wantProgress {
+				t.Errorf("got ProgressPercent %v, want %v", d.ProgressPercent, tt.wantProgress)
+			}
+		})
 	}
 }
 
@@ -249,27 +257,6 @@ func TestComputeRecentEpisodes(t *testing.T) {
 	}
 	if d.RecentEpisodes[11].Number != 4 {
 		t.Errorf("got last recent episode number %d, want 4", d.RecentEpisodes[11].Number)
-	}
-}
-
-func TestComputeDeduplicatesEpisodes(t *testing.T) {
-	t.Parallel()
-	tr := NewTracker(slog.Default())
-
-	profile := crunchyroll.Profile{ProfileName: "Test"}
-	seasons := []crunchyroll.Season{{NumberOfEpisodes: 100, SlugTitle: "east-blue"}}
-
-	base := time.Date(2026, 4, 1, 10, 0, 0, 0, time.UTC)
-	now := time.Date(2026, 4, 21, 12, 0, 0, 0, time.UTC)
-	entries := []crunchyroll.WatchHistoryEntry{
-		makeEntry(1, "Ep 1", "East Blue", base, true),
-		makeEntry(1, "Ep 1", "East Blue", base.Add(time.Hour), true), // duplicate
-		makeEntry(2, "Ep 2", "East Blue", base.Add(2*time.Hour), true),
-	}
-
-	d := tr.Compute(now, profile, entries, seasons)
-	if d.EpisodesWatched != 2 {
-		t.Errorf("got EpisodesWatched %d, want 2 (deduped)", d.EpisodesWatched)
 	}
 }
 

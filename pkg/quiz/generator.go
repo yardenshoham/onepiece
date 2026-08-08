@@ -79,10 +79,6 @@ const maxAttempts = 3
 func (g *Generator) GenerateQuestions(ctx context.Context, episodes []EpisodeSource, usedQuestions []string) ([]RawQuestion, error) {
 	prompt := buildPrompt(episodes, usedQuestions)
 
-	effort := components.ChatRequestEffortMedium
-	trueVal := true
-	maxT := int64(maxTokens)
-
 	req := components.ChatRequest{
 		Model: new(g.model),
 		Messages: []components.ChatMessages{
@@ -95,21 +91,21 @@ func (g *Generator) GenerateQuestions(ctx context.Context, episodes []EpisodeSou
 				Content: components.CreateChatUserMessageContentStr(prompt),
 			}),
 		},
-		MaxTokens: optionalnullable.From(&maxT),
+		MaxTokens: optionalnullable.From(new(int64(maxTokens))),
 		Reasoning: &components.ChatRequestReasoning{
-			Effort: optionalnullable.From(&effort),
+			Effort: optionalnullable.From(new(components.ChatRequestEffortMedium)),
 		},
 		Provider: optionalnullable.From(&components.ProviderPreferences{
-			RequireParameters: optionalnullable.From(&trueVal),
+			RequireParameters: optionalnullable.From(new(true)),
 		}),
-		ResponseFormat: responseFormatPtr(components.ChatFormatJSONSchemaConfig{
-			Type: components.ChatFormatJSONSchemaConfigTypeJSONSchema,
+		// CreateResponseFormatJSONSchema sets the config's Type itself.
+		ResponseFormat: new(components.CreateResponseFormatJSONSchema(components.ChatFormatJSONSchemaConfig{
 			JSONSchema: components.ChatJSONSchemaConfig{
 				Name:   "quiz_questions",
 				Schema: quizSchema(),
-				Strict: optionalnullable.From(&trueVal),
+				Strict: optionalnullable.From(new(true)),
 			},
-		}),
+		})),
 	}
 
 	var lastErr error
@@ -227,9 +223,4 @@ func quizSchema() map[string]any {
 		"required":             []string{"questions"},
 		"additionalProperties": false,
 	}
-}
-
-func responseFormatPtr(cfg components.ChatFormatJSONSchemaConfig) *components.ResponseFormat {
-	v := components.CreateResponseFormatJSONSchema(cfg)
-	return &v
 }

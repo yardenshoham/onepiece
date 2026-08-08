@@ -49,7 +49,6 @@ type EpisodeInfo struct {
 	LongDescription string // enriched summary from the One Piece Wiki (populated by poller when quiz is enabled)
 	SeasonTitle     string
 	ThumbnailURL    string
-	SlugTitle       string
 	DurationMS      int
 	WatchedAt       time.Time
 }

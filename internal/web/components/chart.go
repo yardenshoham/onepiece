@@ -53,22 +53,13 @@ func DailyChart(data []tracker.DailyCount, profileName string) g.Node {
 		runningAverages[i] = float64(cumSum) / float64(i+1)
 	}
 
-	labelsJSON, err := json.Marshal(labels)
-	if err != nil {
-		return html.P(g.Textf("Error rendering chart: %v", err))
-	}
-	countsJSON, err := json.Marshal(counts)
-	if err != nil {
-		return html.P(g.Textf("Error rendering chart: %v", err))
-	}
-	colorsJSON, err := json.Marshal(colors)
-	if err != nil {
-		return html.P(g.Textf("Error rendering chart: %v", err))
-	}
-	avgsJSON, err := json.Marshal(runningAverages)
-	if err != nil {
-		return html.P(g.Textf("Error rendering chart: %v", err))
-	}
+	// These are plain []string/[]int/[]float64 built above, and the running
+	// average always divides by i+1 ≥ 1, so no NaN or Inf can reach here —
+	// json.Marshal cannot fail on any of them.
+	labelsJSON, _ := json.Marshal(labels)
+	countsJSON, _ := json.Marshal(counts)
+	colorsJSON, _ := json.Marshal(colors)
+	avgsJSON, _ := json.Marshal(runningAverages)
 
 	script := fmt.Sprintf(`new Chart(document.getElementById('dailyChart'),{type:'bar',data:{labels:%s,datasets:[{label:'Episodes',data:%s,backgroundColor:%s,borderColor:%s,borderWidth:1},{type:'line',label:'Running avg',data:%s,borderColor:'darkorange',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}}});`,
 		labelsJSON, countsJSON, colorsJSON, colorsJSON, avgsJSON)

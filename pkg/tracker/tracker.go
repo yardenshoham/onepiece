@@ -197,7 +197,6 @@ func episodeInfoFrom(e crunchyroll.WatchHistoryEntry) EpisodeInfo {
 		Description:  e.Panel.Description,
 		SeasonTitle:  e.Panel.EpisodeMetadata.SeasonTitle,
 		ThumbnailURL: e.Panel.Images.ThumbnailAt(640),
-		SlugTitle:    e.Panel.SlugTitle,
 		DurationMS:   e.Panel.EpisodeMetadata.DurationMS,
 		WatchedAt:    e.DatePlayed.UTC(),
 	}
