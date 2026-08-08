@@ -20,8 +20,6 @@ func newTestServer(d *tracker.Dashboard) *Server {
 
 func newTestServerWithConfig(d *tracker.Dashboard, config Config) *Server {
 	logger := slog.Default()
-	tr := tracker.NewTracker(logger)
-	_ = tr
 	p := poller.NewPoller(logger, nil, nil, time.Hour, "")
 
 	if d != nil {
@@ -31,63 +29,10 @@ func newTestServerWithConfig(d *tracker.Dashboard, config Config) *Server {
 	return NewServer(logger, p, config)
 }
 
-func TestHealthEndpointNotReady(t *testing.T) {
+func TestRoutes(t *testing.T) {
 	t.Parallel()
 
-	s := newTestServer(nil)
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	w := httptest.NewRecorder()
-
-	s.mux.ServeHTTP(w, req)
-
-	if w.Code != http.StatusServiceUnavailable {
-		t.Errorf("got status %d, want %d", w.Code, http.StatusServiceUnavailable)
-	}
-	if !strings.Contains(w.Body.String(), "not ready") {
-		t.Errorf("got body %q, want 'not ready'", w.Body.String())
-	}
-}
-
-func TestHealthEndpointReady(t *testing.T) {
-	t.Parallel()
-
-	d := &tracker.Dashboard{
-		ProfileName:     "Test",
-		EpisodesWatched: 37,
-		TotalEpisodes:   1178,
-	}
-	s := newTestServer(d)
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	w := httptest.NewRecorder()
-
-	s.mux.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("got status %d, want %d", w.Code, http.StatusOK)
-	}
-}
-
-func TestDashboardPageLoading(t *testing.T) {
-	t.Parallel()
-
-	s := newTestServer(nil)
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	w := httptest.NewRecorder()
-
-	s.mux.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("got status %d, want %d", w.Code, http.StatusOK)
-	}
-	if !strings.Contains(w.Body.String(), "Loading") {
-		t.Error("expected loading page content")
-	}
-}
-
-func TestDashboardPageWithData(t *testing.T) {
-	t.Parallel()
-
-	d := &tracker.Dashboard{
+	populated := &tracker.Dashboard{
 		ProfileName:     "Nakama",
 		EpisodesWatched: 37,
 		TotalEpisodes:   1178,
@@ -116,87 +61,80 @@ func TestDashboardPageWithData(t *testing.T) {
 		LastUpdated: time.Date(2026, 4, 10, 10, 30, 0, 0, time.UTC),
 	}
 
-	s := newTestServer(d)
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	w := httptest.NewRecorder()
-
-	s.mux.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("got status %d, want %d", w.Code, http.StatusOK)
+	tests := []struct {
+		name       string
+		dashboard  *tracker.Dashboard
+		path       string
+		wantStatus int
+		wantBody   []string
+	}{
+		{
+			name:       "health before the first fetch",
+			path:       "/health",
+			wantStatus: http.StatusServiceUnavailable,
+			wantBody:   []string{"not ready"},
+		},
+		{
+			name:       "health once a dashboard exists",
+			dashboard:  &tracker.Dashboard{ProfileName: "Test", EpisodesWatched: 37, TotalEpisodes: 1178},
+			path:       "/health",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "dashboard before the first fetch",
+			path:       "/",
+			wantStatus: http.StatusOK,
+			wantBody:   []string{"Loading"},
+		},
+		{
+			name:       "dashboard with data",
+			dashboard:  populated,
+			path:       "/",
+			wantStatus: http.StatusOK,
+			wantBody: []string{
+				"Nakama", "37 / 1178", "1.7 episodes/day", "Luffy Rises!", "East Blue",
+				`/static/app.css`,
+				`<relative-time datetime="2026-04-10T10:30:00Z" format="relative">`, // last updated
+				`<relative-time datetime="2026-03-19T00:00:00Z" format="datetime">`, // first watch date
+				`<relative-time datetime="2026-04-10T09:58:34Z" format="relative">`, // last episode watched
+				`<relative-time datetime="2028-03-01T00:00:00Z" format="datetime">`, // estimated catch-up
+				"https://unpkg.com/@github/relative-time-element@5.3.1/dist/index.js",
+			},
+		},
+		{
+			name:       "about",
+			path:       "/about",
+			wantStatus: http.StatusOK,
+			wantBody:   []string{"What is this?", "gomponents", `/static/app.css`},
+		},
+		{
+			name:       "stylesheet",
+			path:       "/static/app.css",
+			wantStatus: http.StatusOK,
+			wantBody:   []string{"--dashboard-shell-width"},
+		},
 	}
 
-	body := w.Body.String()
-	for _, want := range []string{"Nakama", "37 / 1178", "1.7 episodes/day", "Luffy Rises!", "East Blue"} {
-		if !strings.Contains(body, want) {
-			t.Errorf("expected body to contain %q", want)
-		}
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	if !strings.Contains(body, `/static/app.css`) {
-		t.Error("expected dashboard to include app stylesheet")
-	}
+			s := newTestServer(tt.dashboard)
+			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			w := httptest.NewRecorder()
 
-	if !strings.Contains(body, `<relative-time datetime="2026-04-10T10:30:00Z" format="relative">`) {
-		t.Error("expected dashboard to render relative-time element for last updated")
-	}
+			s.mux.ServeHTTP(w, req)
 
-	if !strings.Contains(body, `<relative-time datetime="2026-03-19T00:00:00Z" format="datetime">`) {
-		t.Error("expected dashboard to render relative-time element for first watch date")
-	}
-
-	if !strings.Contains(body, `<relative-time datetime="2026-04-10T09:58:34Z" format="relative">`) {
-		t.Error("expected dashboard to render relative-time element for last episode watched date")
-	}
-
-	if !strings.Contains(body, `<relative-time datetime="2028-03-01T00:00:00Z" format="datetime">`) {
-		t.Error("expected dashboard to render relative-time element for estimated catch-up date")
-	}
-
-	if !strings.Contains(body, "https://unpkg.com/@github/relative-time-element@5.3.1/dist/index.js") {
-		t.Error("expected dashboard to include relative-time-element script")
-	}
-}
-
-func TestAboutPage(t *testing.T) {
-	t.Parallel()
-
-	s := newTestServer(nil)
-	req := httptest.NewRequest(http.MethodGet, "/about", nil)
-	w := httptest.NewRecorder()
-
-	s.mux.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("got status %d, want %d", w.Code, http.StatusOK)
-	}
-
-	body := w.Body.String()
-	if !strings.Contains(body, "What is this?") {
-		t.Error("expected about page content")
-	}
-	if !strings.Contains(body, "gomponents") {
-		t.Error("expected gomponents credit")
-	}
-	if !strings.Contains(body, `/static/app.css`) {
-		t.Error("expected about page to include app stylesheet")
-	}
-}
-
-func TestStaticCSSIsServed(t *testing.T) {
-	t.Parallel()
-
-	s := newTestServer(nil)
-	req := httptest.NewRequest(http.MethodGet, "/static/app.css", nil)
-	w := httptest.NewRecorder()
-
-	s.mux.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("got status %d, want %d", w.Code, http.StatusOK)
-	}
-	if !strings.Contains(w.Body.String(), "--dashboard-shell-width") {
-		t.Error("expected stylesheet content")
+			if w.Code != tt.wantStatus {
+				t.Errorf("got status %d, want %d", w.Code, tt.wantStatus)
+			}
+			body := w.Body.String()
+			for _, want := range tt.wantBody {
+				if !strings.Contains(body, want) {
+					t.Errorf("expected body to contain %q", want)
+				}
+			}
+		})
 	}
 }
 

@@ -24,19 +24,10 @@ func newVersionCmd() *cobra.Command {
 			if !ok {
 				return fmt.Errorf("failed to read build info")
 			}
-			asJSON, err := json.Marshal(
-				versionInfo{
-					Version:   info.Main.Version,
-					GoVersion: info.GoVersion,
-				})
-			if err != nil {
-				return fmt.Errorf("failed to marshal version info: %w", err)
-			}
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\n", asJSON)
-			if err != nil {
-				return fmt.Errorf("failed to print version info: %w", err)
-			}
-			return nil
+			return json.NewEncoder(cmd.OutOrStdout()).Encode(versionInfo{
+				Version:   info.Main.Version,
+				GoVersion: info.GoVersion,
+			})
 		},
 	}
 	return versionCmd

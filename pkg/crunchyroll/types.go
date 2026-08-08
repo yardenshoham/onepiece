@@ -34,10 +34,8 @@ type WatchHistoryEntry struct {
 
 // Panel holds the display metadata for a watch history entry.
 type Panel struct {
-	ID              string          `json:"id"`
 	Title           string          `json:"title"`
 	Description     string          `json:"description"`
-	SlugTitle       string          `json:"slug_title"`
 	Images          PanelImages     `json:"images"`
 	EpisodeMetadata EpisodeMetadata `json:"episode_metadata"`
 }
@@ -74,28 +72,20 @@ func abs(x int) int {
 // ThumbnailImage is a single resolution variant of a thumbnail.
 type ThumbnailImage struct {
 	Width  int    `json:"width"`
-	Height int    `json:"height"`
 	Source string `json:"source"`
-	Type   string `json:"type"`
 }
 
 // EpisodeMetadata holds episode-level information.
 type EpisodeMetadata struct {
-	EpisodeNumber  int       `json:"episode_number"`
-	SeasonNumber   int       `json:"season_number"`
-	SeasonID       string    `json:"season_id"`
-	SeasonTitle    string    `json:"season_title"`
-	SeriesID       string    `json:"series_id"`
-	SeriesTitle    string    `json:"series_title"`
-	EpisodeAirDate time.Time `json:"episode_air_date"`
-	DurationMS     int       `json:"duration_ms"`
+	EpisodeNumber int    `json:"episode_number"`
+	SeasonNumber  int    `json:"season_number"`
+	SeasonTitle   string `json:"season_title"`
+	SeriesID      string `json:"series_id"`
+	DurationMS    int    `json:"duration_ms"`
 }
 
 // Season represents a season of a series.
 type Season struct {
-	ID               string `json:"id"`
-	Title            string `json:"title"`
-	SeasonNumber     int    `json:"season_number"`
 	NumberOfEpisodes int    `json:"number_of_episodes"`
 	SlugTitle        string `json:"slug_title"`
 }
@@ -103,15 +93,4 @@ type Season struct {
 // seasonsResponse wraps the seasons API response.
 type seasonsResponse struct {
 	Data []Season `json:"data"`
-}
-
-// Series represents series metadata.
-type Series struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-}
-
-// seriesResponse wraps the series API response.
-type seriesResponse struct {
-	Data []Series `json:"data"`
 }

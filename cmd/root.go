@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 
@@ -37,9 +36,8 @@ func newRootCmd() *cobra.Command {
 }
 
 func Execute() {
-	rootCmd := newRootCmd()
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+	// cobra already prints the error itself — SilenceErrors is not set.
+	if err := newRootCmd().Execute(); err != nil {
 		os.Exit(1)
 	}
 }

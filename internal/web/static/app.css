@@ -82,37 +82,8 @@ article {
 	gap: 1.5rem;
 }
 
-.dashboard-panels {
-	display: grid;
-	gap: var(--panel-gap);
-	align-items: start;
-}
-
 .dashboard-panel {
 	height: 100%;
-}
-
-.table-scroll {
-	max-height: 24rem;
-	overflow: auto;
-}
-
-.table-scroll table {
-	margin: 0;
-}
-
-.clickable-row {
-	position: relative;
-}
-
-.clickable-row .row-link::after {
-	content: "";
-	position: absolute;
-	inset: 0;
-}
-
-.clickable-row:hover {
-	background: var(--table-row-hover-background, rgba(0, 0, 0, 0.04));
 }
 
 .chart-shell {
@@ -317,25 +288,7 @@ article {
 	gap: 0.6rem;
 }
 
-.quiz-load-more[hidden] {
-	display: none;
-}
-
-.quiz-load-more-spinner {
-	display: none;
-	width: 1rem;
-	height: 1rem;
-	border: 2px solid currentColor;
-	border-top-color: transparent;
-	border-radius: 50%;
-	animation: quiz-spin 0.7s linear infinite;
-	opacity: 0.7;
-}
-
-.quiz-load-more-spinner.htmx-request {
-	display: inline-block;
-}
-
+.quiz-load-more-spinner,
 .quiz-answer-spinner {
 	display: none;
 	width: 1rem;
@@ -345,9 +298,13 @@ article {
 	border-radius: 50%;
 	animation: quiz-spin 0.7s linear infinite;
 	opacity: 0.7;
+}
+
+.quiz-answer-spinner {
 	margin-top: 0.5rem;
 }
 
+.quiz-load-more-spinner.htmx-request,
 .quiz-answer-spinner.htmx-request {
 	display: inline-block;
 }
