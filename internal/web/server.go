@@ -209,6 +209,7 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 			"path", r.URL.Path,
 			"status", rw.statusCode,
 			"duration", time.Since(start).Round(time.Microsecond),
+			"ua", r.UserAgent(),
 		)
 	})
 }

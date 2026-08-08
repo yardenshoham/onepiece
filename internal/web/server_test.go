@@ -1,6 +1,8 @@
 package web
 
 import (
+	"bytes"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -260,5 +262,40 @@ func TestUnknownPathsReturn404(t *testing.T) {
 				t.Errorf("GET %s: got status %d, want %d", path, w.Code, http.StatusNotFound)
 			}
 		})
+	}
+}
+
+func TestLoggingMiddlewareRecordsUserAgent(t *testing.T) {
+	t.Parallel()
+
+	// JSON rather than the production text handler so the assertions read
+	// fields instead of matching serialized substrings.
+	var buf bytes.Buffer
+	s := newTestServer(nil)
+	s.logger = slog.New(slog.NewJSONHandler(&buf, nil))
+
+	const ua = "Mozilla/5.0 (compatible; TestBot/1.0)"
+	req := httptest.NewRequest(http.MethodGet, "/about", nil)
+	req.Header.Set("User-Agent", ua)
+	w := httptest.NewRecorder()
+
+	s.loggingMiddleware(s.mux).ServeHTTP(w, req)
+
+	var got map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &got); err != nil {
+		t.Fatalf("decode log line %q: %v", buf.String(), err)
+	}
+
+	want := map[string]any{
+		"msg":    "request",
+		"method": http.MethodGet,
+		"path":   "/about",
+		"status": float64(http.StatusOK),
+		"ua":     ua,
+	}
+	for key, wantValue := range want {
+		if got[key] != wantValue {
+			t.Errorf("%s = %v, want %v", key, got[key], wantValue)
+		}
 	}
 }
