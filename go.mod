@@ -6,7 +6,7 @@ require (
 	github.com/OpenRouterTeam/go-sdk v0.7.32
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
-	golang.org/x/net v0.57.0
+	golang.org/x/net v0.58.0
 	maragu.dev/gomponents v1.3.0
 	maragu.dev/gomponents-htmx v0.6.1
 )
