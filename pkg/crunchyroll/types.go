@@ -77,6 +77,9 @@ type ThumbnailImage struct {
 
 // EpisodeMetadata holds episode-level information.
 type EpisodeMetadata struct {
+	// Episode is Crunchyroll's display label: "592" for a story episode, but
+	// "SP3" or "Recap" for specials, which recycle low EpisodeNumber values.
+	Episode       string `json:"episode"`
 	EpisodeNumber int    `json:"episode_number"`
 	SeasonNumber  int    `json:"season_number"`
 	SeasonTitle   string `json:"season_title"`

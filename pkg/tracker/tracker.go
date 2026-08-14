@@ -193,6 +193,7 @@ func calculateStreaks(daily []DailyCount, now time.Time) (current, longest int) 
 func episodeInfoFrom(e crunchyroll.WatchHistoryEntry) EpisodeInfo {
 	return EpisodeInfo{
 		Number:       e.Panel.EpisodeMetadata.EpisodeNumber,
+		EpisodeLabel: e.Panel.EpisodeMetadata.Episode,
 		Title:        e.Panel.Title,
 		Description:  e.Panel.Description,
 		SeasonTitle:  e.Panel.EpisodeMetadata.SeasonTitle,

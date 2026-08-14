@@ -177,6 +177,9 @@ func (p *Poller) enrichDashboard(ctx context.Context, d *tracker.Dashboard) {
 	p.descMu.Lock()
 	var toFetch []int
 	for _, ep := range episodes {
+		if ep.IsSpecial() {
+			continue // its number belongs to a different episode on the wiki
+		}
 		if _, ok := p.descCache[ep.Number]; !ok {
 			toFetch = append(toFetch, ep.Number)
 		}
@@ -216,6 +219,9 @@ func (p *Poller) enrichDashboard(ctx context.Context, d *tracker.Dashboard) {
 	p.descMu.Lock()
 	defer p.descMu.Unlock()
 	for i := range d.RecentEpisodes {
+		if d.RecentEpisodes[i].IsSpecial() {
+			continue
+		}
 		if desc, ok := p.descCache[d.RecentEpisodes[i].Number]; ok {
 			d.RecentEpisodes[i].LongDescription = desc
 		}

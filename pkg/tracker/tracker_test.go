@@ -313,3 +313,32 @@ func TestCalculateStreaksEmpty(t *testing.T) {
 		t.Errorf("got current=%d longest=%d, want 0,0", current, longest)
 	}
 }
+
+func TestEpisodeInfoLabelAndIsSpecial(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name      string
+		info      EpisodeInfo
+		wantLabel string
+		wantSpec  bool
+	}{
+		{"story episode", EpisodeInfo{Number: 592, EpisodeLabel: "592"}, "592", false},
+		{"wano special", EpisodeInfo{Number: 3, EpisodeLabel: "SP3"}, "SP3", true},
+		{"egghead recap", EpisodeInfo{Number: 40, EpisodeLabel: "Recap"}, "Recap", true},
+		{"missing label falls back to number", EpisodeInfo{Number: 592}, "592", false},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := c.info.Label(); got != c.wantLabel {
+				t.Errorf("Label() = %q, want %q", got, c.wantLabel)
+			}
+			if got := c.info.IsSpecial(); got != c.wantSpec {
+				t.Errorf("IsSpecial() = %v, want %v", got, c.wantSpec)
+			}
+		})
+	}
+}
