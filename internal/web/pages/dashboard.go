@@ -2,6 +2,7 @@ package pages
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -60,7 +61,7 @@ func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node
 					),
 				),
 				components.Card("📍 Last Watched",
-					html.P(html.Strong(g.Textf("Episode %d: %s", d.LastEpisode.Number, d.LastEpisode.Title))),
+					html.P(html.Strong(g.Textf("Episode %s: %s", d.LastEpisode.Label(), d.LastEpisode.Title))),
 					html.P(g.Textf("Season: %s", d.CurrentSeason)),
 					html.P(
 						g.Text("Watched: "),
@@ -100,6 +101,10 @@ func recentEpisodeCards(episodes []tracker.EpisodeInfo) g.Node {
 	var cards []g.Node
 	for _, ep := range episodes {
 		wikiURL := fmt.Sprintf("https://onepiece.fandom.com/wiki/Episode_%d", ep.Number)
+		if ep.IsSpecial() {
+			// Episode_N would land on an unrelated early episode, so search by title.
+			wikiURL = "https://onepiece.fandom.com/wiki/Special:Search?query=" + url.QueryEscape(ep.Title)
+		}
 		duration := fmt.Sprintf("%d min", ep.DurationMS/1000/60)
 
 		var thumb g.Node
@@ -128,7 +133,7 @@ func recentEpisodeCards(episodes []tracker.EpisodeInfo) g.Node {
 			),
 			html.Div(g.Attr("class", "ep-card__body"),
 				html.Div(g.Attr("class", "ep-card__meta"),
-					html.Span(g.Attr("class", "ep-card__num"), g.Textf("#%d", ep.Number)),
+					html.Span(g.Attr("class", "ep-card__num"), g.Textf("#%s", ep.Label())),
 					html.Span(g.Attr("class", "ep-card__season"), g.Text(ep.SeasonTitle)),
 				),
 				html.H3(
