@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"sync"
 	"time"
+	"uuid"
 )
 
 const (
@@ -256,6 +257,5 @@ func DeriveDeviceID(email string) string {
 	// Set version 4 and variant 2 bits on the hash bytes.
 	h[6] = (h[6] & 0x0f) | 0x40
 	h[8] = (h[8] & 0x3f) | 0x80
-	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
-		h[0:4], h[4:6], h[6:8], h[8:10], h[10:16])
+	return uuid.UUID(h[:16]).String()
 }

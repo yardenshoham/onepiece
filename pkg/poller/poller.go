@@ -2,11 +2,11 @@ package poller
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 	"log/slog"
 	"sync"
 	"time"
+	"uuid"
 
 	"github.com/yardenshoham/onepiece/pkg/crunchyroll"
 	"github.com/yardenshoham/onepiece/pkg/healthchecks"
@@ -89,7 +89,7 @@ func (p *Poller) Fetch(ctx context.Context) error {
 	start := time.Now()
 
 	// Generate a run ID so healthchecks.io can correlate start/completion signals
-	rid := newUUID()
+	rid := uuid.New().String()
 
 	if p.healthcheck != nil {
 		p.healthcheck.Start(ctx, rid)
@@ -226,14 +226,4 @@ func (p *Poller) enrichDashboard(ctx context.Context, d *tracker.Dashboard) {
 			d.RecentEpisodes[i].LongDescription = desc
 		}
 	}
-}
-
-// newUUID generates a random UUID v4 string.
-func newUUID() string {
-	var b [16]byte
-	_, _ = rand.Read(b[:])
-	b[6] = (b[6] & 0x0f) | 0x40 // version 4
-	b[8] = (b[8] & 0x3f) | 0x80 // variant 2
-	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
-		b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
 }
