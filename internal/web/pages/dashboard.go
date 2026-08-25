@@ -43,7 +43,7 @@ func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node
 					watchTimeCard(d),
 				),
 				components.Card("📅 Estimated Catch-up",
-					g.If(d.AvgEpisodesPerDay > 0,
+					g.If(!d.EstimatedCatchUpDate.IsZero(),
 						g.Group([]g.Node{
 							html.P(
 								g.Text("~"),
@@ -56,7 +56,7 @@ func DashboardPage(d *tracker.Dashboard, analyticsConfig AnalyticsConfig) g.Node
 							html.P(g.Textf("%d episodes remaining", d.EpisodesRemaining)),
 						}),
 					),
-					g.If(d.AvgEpisodesPerDay == 0,
+					g.If(d.EstimatedCatchUpDate.IsZero(),
 						html.P(g.Text("N/A")),
 					),
 				),
