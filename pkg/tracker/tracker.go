@@ -13,6 +13,11 @@ import (
 // dateFormat is the layout used for DailyCount.Date keys (UTC calendar days).
 const dateFormat = "2006-01-02"
 
+// episodesReleasedPerDay is how fast the finish line moves: One Piece airs
+// roughly one new episode a week, so a catch-up projection that ignores it
+// keeps sliding even when the watch rate is perfectly steady.
+const episodesReleasedPerDay = 1.0 / 7.0
+
 // Tracker computes dashboard metrics from raw API data.
 type Tracker struct {
 	logger *slog.Logger
@@ -99,16 +104,19 @@ func (t *Tracker) Compute(now time.Time, profile crunchyroll.Profile, history []
 	firstDate := d.FirstWatchDate.Truncate(24 * time.Hour)
 	d.DaysSinceFirst = int(today.Sub(firstDate).Hours() / 24)
 
-	// Average episodes per day
-	if d.DaysSinceFirst == 0 {
-		d.AvgEpisodesPerDay = float64(d.EpisodesWatched)
-	} else {
-		d.AvgEpisodesPerDay = math.Round(float64(d.EpisodesWatched)/float64(d.DaysSinceFirst)*10) / 10
+	// Average episodes per day. The unrounded rate drives the projection so
+	// that display rounding does not nudge the catch-up date around.
+	watchRate := float64(d.EpisodesWatched)
+	if d.DaysSinceFirst > 0 {
+		watchRate /= float64(d.DaysSinceFirst)
 	}
+	d.AvgEpisodesPerDay = math.Round(watchRate*10) / 10
 
-	// Estimated catch-up date
-	if d.AvgEpisodesPerDay > 0 {
-		daysNeeded := math.Ceil(float64(d.EpisodesRemaining) / d.AvgEpisodesPerDay)
+	// Estimated catch-up date. The gap closes at the net rate: every day of
+	// watching is partly offset by newly aired episodes. At or below the
+	// release rate the gap never closes, so there is no date to show.
+	if netRate := watchRate - episodesReleasedPerDay; netRate > 0 {
+		daysNeeded := math.Ceil(float64(d.EpisodesRemaining) / netRate)
 		d.EstimatedCatchUpDate = today.AddDate(0, 0, int(daysNeeded))
 	}
 

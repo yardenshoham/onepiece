@@ -342,3 +342,72 @@ func TestEpisodeInfoLabelAndIsSpecial(t *testing.T) {
 		})
 	}
 }
+
+// TestComputeCatchUpDateStableAtSteadyRate is the reason the projection uses a
+// net rate: watching at a constant pace while episodes keep airing must not
+// push the estimate further away every day.
+func TestComputeCatchUpDateStableAtSteadyRate(t *testing.T) {
+	t.Parallel()
+	tr := NewTracker(slog.Default())
+
+	profile := crunchyroll.Profile{ProfileName: "Nakama"}
+	start := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+
+	// Watch 4 episodes a day for 100 days, then simulate 70 more days at the
+	// same pace with one new episode airing every 7 days.
+	const perDay = 4
+	var entries []crunchyroll.WatchHistoryEntry
+	episode := 0
+	addDay := func(day int) {
+		for range perDay {
+			episode++
+			entries = append(entries, makeEntry(episode, "Ep", "East Blue", start.AddDate(0, 0, day), true))
+		}
+	}
+	for day := range 100 {
+		addDay(day)
+	}
+
+	totalEpisodes := 3000
+	now := start.AddDate(0, 0, 99)
+	want := tr.Compute(now, profile, entries, []crunchyroll.Season{{NumberOfEpisodes: totalEpisodes}}).EstimatedCatchUpDate
+	if want.IsZero() {
+		t.Fatal("got zero EstimatedCatchUpDate, want a date")
+	}
+
+	for day := 100; day < 170; day++ {
+		addDay(day)
+		if day%7 == 0 {
+			totalEpisodes++
+		}
+		now = start.AddDate(0, 0, day)
+		got := tr.Compute(now, profile, entries, []crunchyroll.Season{{NumberOfEpisodes: totalEpisodes}}).EstimatedCatchUpDate
+		// Integer episode counts and day rounding leave a little jitter; what
+		// matters is that the date does not drift steadily away.
+		if diff := got.Sub(want); diff < -3*24*time.Hour || diff > 3*24*time.Hour {
+			t.Fatalf("day %d: got EstimatedCatchUpDate %v, want within 3 days of %v", day, got.Format(dateFormat), want.Format(dateFormat))
+		}
+	}
+}
+
+func TestComputeNoCatchUpDateWhenSlowerThanReleases(t *testing.T) {
+	t.Parallel()
+	tr := NewTracker(slog.Default())
+
+	profile := crunchyroll.Profile{ProfileName: "Nakama"}
+	seasons := []crunchyroll.Season{{NumberOfEpisodes: 1200}}
+	start := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+
+	// One episode every 14 days: slower than the release rate, so the gap
+	// never closes.
+	var entries []crunchyroll.WatchHistoryEntry
+	for i := range 10 {
+		entries = append(entries, makeEntry(i+1, "Ep", "East Blue", start.AddDate(0, 0, i*14), true))
+	}
+
+	d := tr.Compute(start.AddDate(0, 0, 9*14), profile, entries, seasons)
+
+	if !d.EstimatedCatchUpDate.IsZero() {
+		t.Errorf("got EstimatedCatchUpDate %v, want zero", d.EstimatedCatchUpDate)
+	}
+}
