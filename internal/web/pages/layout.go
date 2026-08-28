@@ -52,7 +52,14 @@ func Layout(title, currentPath string, refreshSeconds int, analyticsConfig Analy
 				g.Attr("type", "module"),
 				g.Attr("src", "https://unpkg.com/@github/relative-time-element@5.3.1/dist/index.js"),
 			),
-			html.Script(g.Attr("src", "https://unpkg.com/htmx.org@2.0.10/dist/htmx.min.js")),
+			// htmx 4 swaps error responses by default; restore the htmx 2
+			// behaviour of ignoring 4xx/5xx bodies (our error paths reply with
+			// plain text that must not land in the page). Must precede the script.
+			html.Meta(
+				g.Attr("name", "htmx-config"),
+				g.Attr("content", `{"noSwap":[204,304,"4xx","5xx"]}`),
+			),
+			html.Script(g.Attr("src", "https://unpkg.com/htmx.org@4.0.0/dist/htmx.min.js")),
 			posthogScript(analyticsConfig),
 		},
 		Body: []g.Node{
