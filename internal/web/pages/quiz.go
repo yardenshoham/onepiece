@@ -156,7 +156,7 @@ func answerButton(questionID, option string) g.Node {
 		hx.Swap("outerHTML"),
 		hx.Vals(fmt.Sprintf(`{"question_id":%q,"answer":%q}`, questionID, option)),
 		hx.Indicator(fmt.Sprintf("#quiz-q-%s-spinner", questionID)),
-		g.Attr("hx-disabled-elt", "closest fieldset"),
+		g.Attr("hx-disable", "closest fieldset"),
 		g.Text(option),
 	)
 }
@@ -181,7 +181,7 @@ func loadMoreContents() g.Node {
 			hx.Swap("innerHTML"),
 			hx.Vals(`{"refresh":"1"}`),
 			hx.Indicator("#quiz-load-more-spinner"),
-			g.Attr("hx-disabled-elt", "this"),
+			g.Attr("hx-disable", "this"),
 			g.Text("Load 3 more"),
 		),
 		html.Span(
