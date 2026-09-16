@@ -18,10 +18,21 @@ type authResponse struct {
 	AccountID    string `json:"account_id"`
 }
 
-// WatchHistoryResponse represents the paginated watch history response.
+// WatchHistoryResponse represents one page of the cursor-paginated watch
+// history response. Total is the number of entries on this page, not the
+// size of the whole history.
 type WatchHistoryResponse struct {
 	Total int                 `json:"total"`
 	Data  []WatchHistoryEntry `json:"data"`
+	Meta  WatchHistoryMeta    `json:"meta"`
+}
+
+// WatchHistoryMeta holds the cursor pagination links. NextPage is a path
+// relative to the API host (including query string) and is empty on the
+// last page.
+type WatchHistoryMeta struct {
+	PrevPage string `json:"prev_page"`
+	NextPage string `json:"next_page"`
 }
 
 // WatchHistoryEntry represents a single entry in the watch history.

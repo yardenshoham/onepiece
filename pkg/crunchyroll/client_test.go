@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -43,7 +44,11 @@ func TestParseWatchHistoryResponse(t *testing.T) {
 	t.Parallel()
 
 	raw := `{
-		"total": 37,
+		"total": 2,
+		"meta": {
+			"prev_page": "",
+			"next_page": "/content/v2/acc-123/watch-history?locale=en-US&page=eyJjIjoiR1IxOVE3UEs3In0&page_size=2"
+		},
 		"data": [
 			{
 				"id": "GR19Q7PK6",
@@ -87,8 +92,11 @@ func TestParseWatchHistoryResponse(t *testing.T) {
 		t.Fatalf("failed to unmarshal: %v", err)
 	}
 
-	if resp.Total != 37 {
-		t.Errorf("got total %d, want %d", resp.Total, 37)
+	if resp.Total != 2 {
+		t.Errorf("got total %d, want %d", resp.Total, 2)
+	}
+	if want := "/content/v2/acc-123/watch-history?locale=en-US&page=eyJjIjoiR1IxOVE3UEs3In0&page_size=2"; resp.Meta.NextPage != want {
+		t.Errorf("got next_page %q, want %q", resp.Meta.NextPage, want)
 	}
 	if len(resp.Data) != 2 {
 		t.Fatalf("got %d entries, want %d", len(resp.Data), 2)
@@ -200,6 +208,51 @@ func TestClientGetProfile(t *testing.T) {
 	}
 	if profile.ProfileName != "TestUser" {
 		t.Errorf("got profile_name %q, want %q", profile.ProfileName, "TestUser")
+	}
+}
+
+func TestClientGetAllWatchHistory(t *testing.T) {
+	t.Parallel()
+
+	const historyPath = "/content/v2/acc-123/watch-history"
+	// The first request carries no cursor; every later one carries the cursor
+	// from the previous page's meta.next_page.
+	pages := map[string]WatchHistoryResponse{
+		"": {
+			Data: []WatchHistoryEntry{{ID: "A"}, {ID: "B"}},
+			Meta: WatchHistoryMeta{NextPage: historyPath + "?page=cursor-2&page_size=100"},
+		},
+		"cursor-2": {Data: []WatchHistoryEntry{{ID: "C"}}},
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp, ok := pages[r.URL.Query().Get("page")]
+		if r.URL.Path != historyPath || !ok {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	c := &Client{
+		logger:      slog.Default(),
+		httpClient:  server.Client(),
+		baseURL:     server.URL,
+		accountID:   "acc-123",
+		accessToken: "test-token",
+		tokenExpiry: time.Now().Add(5 * time.Minute),
+	}
+
+	all, err := c.GetAllWatchHistory(t.Context())
+	if err != nil {
+		t.Fatalf("GetAllWatchHistory: %v", err)
+	}
+	var ids []string
+	for _, e := range all {
+		ids = append(ids, e.ID)
+	}
+	if got := strings.Join(ids, ","); got != "A,B,C" {
+		t.Errorf("got ids %q, want %q", got, "A,B,C")
 	}
 }
 
@@ -318,4 +371,37 @@ func TestIntegrationGetProfile(t *testing.T) {
 		t.Error("got empty profile_name")
 	}
 	t.Logf("profile_name: %q", profile.ProfileName)
+}
+
+func TestIntegrationGetAllWatchHistory(t *testing.T) {
+	t.Parallel()
+
+	email := os.Getenv("ONEPIECE_CR_EMAIL")
+	password := os.Getenv("ONEPIECE_CR_PASSWORD")
+	if email == "" || password == "" {
+		t.Skip("ONEPIECE_CR_EMAIL and ONEPIECE_CR_PASSWORD not set")
+	}
+
+	ctx := t.Context()
+
+	client, err := NewClient(ctx, slog.Default(), email, password)
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+
+	history, err := client.GetAllWatchHistory(ctx)
+	if err != nil {
+		t.Fatalf("GetAllWatchHistory: %v", err)
+	}
+	if len(history) == 0 {
+		t.Fatal("got empty watch history")
+	}
+	seen := make(map[string]bool, len(history))
+	for _, e := range history {
+		if seen[e.ID] {
+			t.Errorf("entry %q returned twice; cursor pagination overlapped", e.ID)
+		}
+		seen[e.ID] = true
+	}
+	t.Logf("entries: %d", len(history))
 }

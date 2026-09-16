@@ -37,6 +37,7 @@ const (
 type Client struct {
 	logger       *slog.Logger
 	httpClient   *http.Client
+	baseURL      string // overrides the production API host; empty in production
 	email        string
 	password     string
 	deviceID     string
@@ -195,14 +196,22 @@ func (c *Client) GetProfile(ctx context.Context) (*Profile, error) {
 	return &profile, nil
 }
 
-// GetWatchHistory returns a single page of watch history.
-func (c *Client) GetWatchHistory(ctx context.Context, page, ps int) (*WatchHistoryResponse, error) {
-	u := fmt.Sprintf("%s/content/v2/%s/watch-history?page=%d&page_size=%d&locale=en-US",
-		baseURL, c.accountID, page, ps)
+// apiBase returns the API host to build request URLs against. Tests set
+// c.baseURL to point at a local server; production leaves it empty.
+func (c *Client) apiBase() string {
+	if c.baseURL != "" {
+		return c.baseURL
+	}
+	return baseURL
+}
 
-	body, err := c.doGet(ctx, u)
+// getWatchHistoryPage fetches one page of watch history. path is the
+// host-relative request path, either the first page or a Meta.NextPage link
+// returned by the previous page.
+func (c *Client) getWatchHistoryPage(ctx context.Context, path string) (*WatchHistoryResponse, error) {
+	body, err := c.doGet(ctx, c.apiBase()+path)
 	if err != nil {
-		return nil, fmt.Errorf("getting watch history page %d: %w", page, err)
+		return nil, fmt.Errorf("getting watch history page %s: %w", path, err)
 	}
 
 	var resp WatchHistoryResponse
@@ -212,23 +221,27 @@ func (c *Client) GetWatchHistory(ctx context.Context, page, ps int) (*WatchHisto
 	return &resp, nil
 }
 
-// GetAllWatchHistory fetches all pages of watch history.
+// GetAllWatchHistory fetches all pages of watch history by following the
+// cursor links the API returns in meta.next_page.
 func (c *Client) GetAllWatchHistory(ctx context.Context) ([]WatchHistoryEntry, error) {
 	var all []WatchHistoryEntry
 
+	path := fmt.Sprintf("/content/v2/%s/watch-history?page_size=%d&locale=en-US", c.accountID, pageSize)
 	for page := 1; page <= maxPages; page++ {
-		c.logger.Debug("fetching watch history", "page", page)
-		resp, err := c.GetWatchHistory(ctx, page, pageSize)
+		c.logger.Debug("fetching watch history", "page", page, "path", path)
+		resp, err := c.getWatchHistoryPage(ctx, path)
 		if err != nil {
 			return nil, err
 		}
 
 		all = append(all, resp.Data...)
 
-		if len(resp.Data) < pageSize || len(all) >= resp.Total {
+		next := resp.Meta.NextPage
+		if len(resp.Data) == 0 || next == "" || next == path {
 			c.logger.Info("fetched watch history", "total_entries", len(all))
 			return all, nil
 		}
+		path = next
 	}
 
 	return nil, fmt.Errorf("watch history exceeded %d pages, aborting", maxPages)
