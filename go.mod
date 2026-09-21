@@ -3,7 +3,7 @@ module github.com/yardenshoham/onepiece
 go 1.27.0
 
 require (
-	github.com/OpenRouterTeam/go-sdk v0.7.132
+	github.com/OpenRouterTeam/go-sdk v0.8.10
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/net v0.59.0
