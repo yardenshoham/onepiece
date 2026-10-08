@@ -14,6 +14,7 @@ import (
 )
 
 // model is OpenRouter's alias that always routes to the newest GPT Luna release.
+// See tools/quizbench for how it was chosen and how to compare alternatives.
 const model = "~openai/gpt-luna-latest"
 
 const maxTokens = 1500
@@ -63,11 +64,16 @@ type Generator struct {
 
 // NewGenerator returns a Generator that authenticates with the given API key.
 func NewGenerator(apiKey string) *Generator {
+	return NewGeneratorWithModel(apiKey, model)
+}
+
+// NewGeneratorWithModel is like NewGenerator but uses the given OpenRouter model.
+func NewGeneratorWithModel(apiKey, modelID string) *Generator {
 	return &Generator{
 		client: openrouter.New(
 			openrouter.WithSecurity(apiKey),
 		),
-		model: model,
+		model: modelID,
 	}
 }
 
