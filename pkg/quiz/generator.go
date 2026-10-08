@@ -13,7 +13,8 @@ import (
 	"github.com/OpenRouterTeam/go-sdk/optionalnullable"
 )
 
-const model = "openai/gpt-5.6-luna"
+// model is OpenRouter's alias that always routes to the newest GPT Luna release.
+const model = "~openai/gpt-luna-latest"
 
 const maxTokens = 1500
 
@@ -93,7 +94,9 @@ func (g *Generator) GenerateQuestions(ctx context.Context, episodes []EpisodeSou
 		},
 		MaxTokens: optionalnullable.From(new(int64(maxTokens))),
 		Reasoning: &components.ChatRequestReasoning{
-			Effort: optionalnullable.From(new(components.ChatRequestEffortMedium)),
+			// GPT-6 Luna reasons ~2x longer than GPT-5.6 Luna at medium effort
+			// (10-17s per quiz); low keeps generation at ~3-10s.
+			Effort: optionalnullable.From(new(components.ChatRequestEffortLow)),
 		},
 		Provider: optionalnullable.From(&components.ProviderPreferences{
 			RequireParameters: optionalnullable.From(new(true)),
