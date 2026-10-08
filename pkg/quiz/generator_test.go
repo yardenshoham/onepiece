@@ -23,8 +23,7 @@ func TestGenerateQuestions(t *testing.T) {
 		t.Skip("ONEPIECE_OPENROUTER_API_KEY not set")
 	}
 
-	g := NewGenerator(apiKey)
-	g.model = testModel
+	g := NewGeneratorWithModel(apiKey, testModel)
 
 	episodes := []EpisodeSource{
 		{
