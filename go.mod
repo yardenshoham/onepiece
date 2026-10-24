@@ -1,6 +1,6 @@
 module github.com/yardenshoham/onepiece
 
-go 1.27.0
+go 1.27.3
 
 require (
 	github.com/OpenRouterTeam/go-sdk v0.9.22
