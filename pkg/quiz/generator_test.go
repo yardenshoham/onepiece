@@ -5,12 +5,6 @@ import (
 	"testing"
 )
 
-// testModel is the free OpenRouter model used for integration tests.
-// nvidia/nemotron-3-super-120b-a12b:free is the highest-throughput free model
-// (262144 max completion tokens) that supports response_format, structured_outputs,
-// and reasoning — matching the full parameter set sent by GenerateQuestions.
-const testModel = "nvidia/nemotron-3-super-120b-a12b:free"
-
 func TestGenerateQuestions(t *testing.T) {
 	t.Parallel()
 
@@ -23,7 +17,9 @@ func TestGenerateQuestions(t *testing.T) {
 		t.Skip("ONEPIECE_OPENROUTER_API_KEY not set")
 	}
 
-	g := NewGeneratorWithModel(apiKey, testModel)
+	// Uses the production model: free OpenRouter models proved too unreliable
+	// with structured output and reasoning, and a run costs well under a cent.
+	g := NewGenerator(apiKey)
 
 	episodes := []EpisodeSource{
 		{
