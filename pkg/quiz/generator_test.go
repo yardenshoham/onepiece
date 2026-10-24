@@ -5,12 +5,11 @@ import (
 	"testing"
 )
 
-// testModel is the free OpenRouter model used for integration tests. The CI
-// key is limited to free models. openrouter/free routes to whichever free
-// model can serve the request; no single free model was reliable with the
-// structured output and reasoning that GenerateQuestions requires, so this
-// test can be flaky.
-const testModel = "openrouter/free"
+// testModel is the free OpenRouter model used for integration tests; the CI
+// key is limited to free models. nvidia/nemotron-3.5-super-vl:free is the most
+// used free model that supports response_format, structured_outputs, and
+// reasoning — the full parameter set sent by GenerateQuestions.
+const testModel = "nvidia/nemotron-3.5-super-vl:free"
 
 func TestGenerateQuestions(t *testing.T) {
 	t.Parallel()

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -51,11 +52,20 @@ type Client struct {
 // NewClient authenticates with Crunchyroll and returns a ready-to-use client.
 func NewClient(ctx context.Context, logger *slog.Logger, email, password string) (*Client, error) {
 	c := &Client{
-		logger:     logger,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
-		email:      email,
-		password:   password,
-		deviceID:   DeriveDeviceID(email),
+		logger: logger,
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+			// Crunchyroll rejects password logins (401 invalid_credentials)
+			// unless the TLS handshake offers only HTTP/1.1 via ALPN. Go's
+			// default transport also offers HTTP/2.
+			Transport: &http.Transport{
+				Proxy:           http.ProxyFromEnvironment,
+				TLSClientConfig: &tls.Config{NextProtos: []string{"http/1.1"}},
+			},
+		},
+		email:    email,
+		password: password,
+		deviceID: DeriveDeviceID(email),
 	}
 
 	if err := c.authenticate(ctx); err != nil {

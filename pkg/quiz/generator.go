@@ -17,7 +17,9 @@ import (
 // See tools/quizbench for how it was chosen and how to compare alternatives.
 const model = "~openai/gpt-luna-latest"
 
-const maxTokens = 1500
+// maxTokens caps output, reasoning included. GPT Luna at low effort stays far
+// below it; the headroom lets the free test model finish reasoning.
+const maxTokens = 6000
 
 const systemPrompt = "You are a One Piece trivia expert. Generate exactly 3 multiple-choice quiz questions in the requested JSON format.\n\n" +
 	"Rules:\n" +
