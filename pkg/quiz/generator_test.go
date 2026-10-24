@@ -5,6 +5,13 @@ import (
 	"testing"
 )
 
+// testModel is the free OpenRouter model used for integration tests. The CI
+// key is limited to free models. openrouter/free routes to whichever free
+// model can serve the request; no single free model was reliable with the
+// structured output and reasoning that GenerateQuestions requires, so this
+// test can be flaky.
+const testModel = "openrouter/free"
+
 func TestGenerateQuestions(t *testing.T) {
 	t.Parallel()
 
@@ -17,9 +24,7 @@ func TestGenerateQuestions(t *testing.T) {
 		t.Skip("ONEPIECE_OPENROUTER_API_KEY not set")
 	}
 
-	// Uses the production model: free OpenRouter models proved too unreliable
-	// with structured output and reasoning, and a run costs well under a cent.
-	g := NewGenerator(apiKey)
+	g := NewGeneratorWithModel(apiKey, testModel)
 
 	episodes := []EpisodeSource{
 		{
