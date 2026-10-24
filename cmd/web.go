@@ -81,9 +81,22 @@ func newWebCmd() *cobra.Command {
 
 			// Create Crunchyroll client
 			logger.Info("connecting to Crunchyroll")
-			client, err := crunchyroll.NewClient(ctx, logger, email, password)
-			if err != nil {
-				return fmt.Errorf("creating Crunchyroll client: %w", err)
+			var client *crunchyroll.Client
+			for wait := time.Minute; ; wait = min(wait*2, 10*time.Minute) {
+				var err error
+				client, err = crunchyroll.NewClient(ctx, logger, email, password)
+				if err == nil {
+					break
+				}
+				// Retry in-process instead of exiting: Crunchyroll temporarily
+				// rejects password logins after a burst of failures, which a
+				// crash-and-restart loop would trigger.
+				logger.Warn("connecting to Crunchyroll failed, retrying", "error", err, "retry_in", wait)
+				select {
+				case <-ctx.Done():
+					return fmt.Errorf("creating Crunchyroll client: %w", err)
+				case <-time.After(wait):
+				}
 			}
 
 			// Create tracker and poller
