@@ -59,7 +59,7 @@ func Layout(title, currentPath string, refreshSeconds int, analyticsConfig Analy
 				g.Attr("name", "htmx-config"),
 				g.Attr("content", `{"noSwap":[204,304,"4xx","5xx"]}`),
 			),
-			html.Script(g.Attr("src", "https://unpkg.com/htmx.org@4.0.0/dist/htmx.min.js")),
+			html.Script(g.Attr("src", "https://unpkg.com/htmx.org@4.0.1/dist/htmx.min.js")),
 			posthogScript(analyticsConfig),
 		},
 		Body: []g.Node{
