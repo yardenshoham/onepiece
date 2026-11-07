@@ -49,9 +49,11 @@ func (t *Tracker) Compute(now time.Time, profile crunchyroll.Profile, history []
 	// later episode watched means the user progressed past it.
 	var filtered []crunchyroll.WatchHistoryEntry
 	for _, e := range history {
-		if e.Panel.EpisodeMetadata.SeriesID == crunchyroll.OnePieceSeriesID {
-			filtered = append(filtered, e)
+		if e.Panel.EpisodeMetadata.SeriesID != crunchyroll.OnePieceSeriesID {
+			t.logger.Info("skipping non-One Piece history entry", historyEntryAttrs(e)...)
+			continue
 		}
+		filtered = append(filtered, e)
 	}
 
 	if len(filtered) == 0 {
@@ -75,10 +77,12 @@ func (t *Tracker) Compute(now time.Time, profile crunchyroll.Profile, history []
 			SeasonNumber:  e.Panel.EpisodeMetadata.SeasonNumber,
 			EpisodeNumber: e.Panel.EpisodeMetadata.EpisodeNumber,
 		}
-		if !seen[key] {
-			seen[key] = true
-			deduped = append(deduped, e)
+		if seen[key] {
+			t.logger.Info("skipping duplicate history entry", historyEntryAttrs(e)...)
+			continue
 		}
+		seen[key] = true
+		deduped = append(deduped, e)
 	}
 
 	d.EpisodesWatched = len(deduped)
@@ -194,6 +198,19 @@ func calculateStreaks(daily []DailyCount, now time.Time) (current, longest int) 
 	}
 
 	return current, longest
+}
+
+// historyEntryAttrs returns log attributes identifying a watch history entry.
+func historyEntryAttrs(e crunchyroll.WatchHistoryEntry) []any {
+	m := e.Panel.EpisodeMetadata
+	return []any{
+		"id", e.ID,
+		"title", e.Panel.Title,
+		"series_id", m.SeriesID,
+		"season_number", m.SeasonNumber,
+		"episode", m.Episode,
+		"episode_number", m.EpisodeNumber,
+	}
 }
 
 // episodeInfoFrom converts a WatchHistoryEntry to an EpisodeInfo, capturing

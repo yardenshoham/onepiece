@@ -1,7 +1,9 @@
 package tracker
 
 import (
+	"bytes"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -110,6 +112,33 @@ func TestComputeCounts(t *testing.T) {
 				t.Errorf("got ProgressPercent %v, want %v", d.ProgressPercent, tt.wantProgress)
 			}
 		})
+	}
+}
+
+func TestComputeLogsSkippedEntries(t *testing.T) {
+	t.Parallel()
+
+	base := time.Date(2026, 4, 1, 10, 0, 0, 0, time.UTC)
+	other := makeEntry(7, "Some Other Show", "Other", base, true)
+	other.Panel.EpisodeMetadata.SeriesID = "OTHER-SERIES"
+	history := []crunchyroll.WatchHistoryEntry{
+		makeEntry(1, "Ep 1", "East Blue", base, true),
+		makeEntry(1, "Ep 1 again", "East Blue", base.Add(time.Hour), true),
+		other,
+	}
+
+	var buf bytes.Buffer
+	tr := NewTracker(slog.New(slog.NewTextHandler(&buf, nil)))
+	tr.Compute(base, crunchyroll.Profile{}, history, nil)
+
+	logs := buf.String()
+	for _, want := range []string{
+		`msg="skipping duplicate history entry" id=test-id title="Ep 1 again"`,
+		`msg="skipping non-One Piece history entry" id=test-id title="Some Other Show" series_id=OTHER-SERIES`,
+	} {
+		if !strings.Contains(logs, want) {
+			t.Errorf("logs missing %q; got:\n%s", want, logs)
+		}
 	}
 }
 
