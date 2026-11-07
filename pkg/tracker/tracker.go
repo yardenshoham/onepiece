@@ -47,14 +47,25 @@ func (t *Tracker) Compute(now time.Time, profile crunchyroll.Profile, history []
 	// Filter: only One Piece episodes that are in the watch history.
 	// Include episodes even if not fully_watched — being in the history with a
 	// later episode watched means the user progressed past it.
+	//
+	// Crunchyroll blanks out entries for episodes that aren't licensed where
+	// the server runs (e.g. episode 542 in the Netherlands) and leaves them out
+	// of the season counts too, so count them back into both.
 	var filtered []crunchyroll.WatchHistoryEntry
+	hidden := 0
 	for _, e := range history {
+		if e.Panel.EpisodeMetadata.SeriesID == "" {
+			t.logger.Info("counting region-hidden history entry", "id", e.ID)
+			hidden++
+			continue
+		}
 		if e.Panel.EpisodeMetadata.SeriesID != crunchyroll.OnePieceSeriesID {
 			t.logger.Info("skipping non-One Piece history entry", historyEntryAttrs(e)...)
 			continue
 		}
 		filtered = append(filtered, e)
 	}
+	d.TotalEpisodes += hidden
 
 	if len(filtered) == 0 {
 		return d
@@ -85,7 +96,7 @@ func (t *Tracker) Compute(now time.Time, profile crunchyroll.Profile, history []
 		deduped = append(deduped, e)
 	}
 
-	d.EpisodesWatched = len(deduped)
+	d.EpisodesWatched = len(deduped) + hidden
 	d.EpisodesRemaining = max(d.TotalEpisodes-d.EpisodesWatched, 0)
 
 	for _, e := range deduped {
