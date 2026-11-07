@@ -65,6 +65,17 @@ func TestComputeCounts(t *testing.T) {
 			wantTotal:   100,
 		},
 		{
+			name: "region-hidden entries count toward watched and total",
+			history: []crunchyroll.WatchHistoryEntry{
+				makeEntry(1, "Ep 1", "East Blue", base, true),
+				{ID: "hidden", DatePlayed: base.Add(time.Hour)}, // blank panel
+			},
+			seasons:      []crunchyroll.Season{{NumberOfEpisodes: 100, SlugTitle: "east-blue"}},
+			wantWatched:  2,
+			wantTotal:    101,
+			wantProgress: 2.0,
+		},
+		{
 			name:         "partially watched still counts",
 			history:      []crunchyroll.WatchHistoryEntry{makeEntry(1, "Ep 1", "East Blue", base, false)},
 			seasons:      []crunchyroll.Season{{NumberOfEpisodes: 100, SlugTitle: "east-blue"}},
