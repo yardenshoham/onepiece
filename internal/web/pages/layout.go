@@ -50,7 +50,7 @@ func Layout(title, currentPath string, refreshSeconds int, analyticsConfig Analy
 			html.Script(g.Attr("src", "https://cdn.jsdelivr.net/npm/chart.js@4.6.1/dist/chart.umd.min.js")),
 			html.Script(
 				g.Attr("type", "module"),
-				g.Attr("src", "https://unpkg.com/@github/relative-time-element@5.3.1/dist/index.js"),
+				g.Attr("src", "https://unpkg.com/@github/relative-time-element@5.5.0/dist/index.js"),
 			),
 			// htmx 4 swaps error responses by default; restore the htmx 2
 			// behaviour of ignoring 4xx/5xx bodies (our error paths reply with

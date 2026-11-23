@@ -98,7 +98,7 @@ func TestRoutes(t *testing.T) {
 				`<relative-time datetime="2026-03-19T00:00:00Z" format="datetime">`, // first watch date
 				`<relative-time datetime="2026-04-10T09:58:34Z" format="relative">`, // last episode watched
 				`<relative-time datetime="2028-03-01T00:00:00Z" format="datetime">`, // estimated catch-up
-				"https://unpkg.com/@github/relative-time-element@5.3.1/dist/index.js",
+				"https://unpkg.com/@github/relative-time-element@5.5.0/dist/index.js",
 			},
 		},
 		{
